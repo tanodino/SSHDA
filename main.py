@@ -234,7 +234,9 @@ for epoch in range(epochs):
 
 
         l2_reg = sum(p.pow(2).sum() for p in model.parameters())
-        loss = loss_pred + loss_dom + mixdl_loss_supContraLoss + loss_ortho + 0.00001 * l2_reg
+        #loss = loss_pred + loss_dom + mixdl_loss_supContraLoss + loss_ortho + 0.00001 * l2_reg
+        loss = loss_pred + mixdl_loss_supContraLoss + loss_ortho + 0.00001 * l2_reg
+        
         loss.backward() # backward pass: backpropagate the prediction loss
         optimizer.step() # gradient descent: adjust the parameters by the gradients collected in the backward pass
         #EMA model update
