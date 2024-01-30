@@ -97,7 +97,7 @@ print("TRAININg ID SELECTED")
 print("train_target_data ",train_target_data.shape)
 print("train_target_label ",train_target_label.shape)
 
-source_data, source_label = dataAugRotate(source_data, source_label, (1,2))
+#source_data, source_label = dataAugRotate(source_data, source_label, (1,2))
 train_target_data, train_target_label = dataAugRotate(train_target_data, train_target_label, (1,2))
 
 print("AFTER DATA AUGMENTATION")
