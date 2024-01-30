@@ -228,14 +228,15 @@ for epoch in range(epochs):
         mixdl_loss_supContraLoss = sim_dist_specifc_loss_spc(joint_embedding, y_mix_labels, dom_mix_labels, scl, epoch)
         '''
         mixdl_loss_supContraLoss = sim_dist_specifc_loss_spc(inv_emb, y_inv_labels, np.zeros_like(y_inv_labels), scl, epoch)
+        '''
         norm_inv_emb = nn.functional.normalize(inv_emb)
         norm_spec_emb = nn.functional.normalize(spec_emb)
         loss_ortho = torch.mean( torch.sum( norm_inv_emb * norm_spec_emb, dim=1) )
-        '''
+        
 
         l2_reg = sum(p.pow(2).sum() for p in model.parameters())
         #loss = loss_pred + loss_dom + mixdl_loss_supContraLoss + loss_ortho + 0.00001 * l2_reg
-        loss = loss_pred + loss_dom + mixdl_loss_supContraLoss + 0.00001 * l2_reg
+        loss = loss_pred + loss_dom + mixdl_loss_supContraLoss + 0.00001 * l2_reg + loss_ortho
         #loss = loss_pred + mixdl_loss_supContraLoss + loss_ortho + 0.00001 * l2_reg
         
         loss.backward() # backward pass: backpropagate the prediction loss
