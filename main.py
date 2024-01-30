@@ -158,7 +158,7 @@ w_size = 128
 #dataset_source = TensorDataset(x_train_source, y_train_source)
 
 transform_source = T.Compose([
-    T.Resize(w_size), 
+    T.Resize(w_size,antialias=True), 
     T.RandomHorizontalFlip(),
     T.RandomVerticalFlip()
     ])
@@ -227,6 +227,7 @@ scl = SupervisedContrastiveLoss()
 epochs = 300
 # Loop through the data
 valid_f1 = 0.0
+margin = .3
 for epoch in range(epochs):
     start = time.time()
     model.train()
@@ -272,7 +273,7 @@ for epoch in range(epochs):
         norm_inv_emb = nn.functional.normalize(inv_emb)
         norm_spec_emb = nn.functional.normalize(spec_emb)
         loss_ortho = torch.mean( torch.sum( norm_inv_emb * norm_spec_emb, dim=1) )
-        
+        loss_ortho, _ = torch.maxs( loss_ortho - margin, 0)
 
         l2_reg = sum(p.pow(2).sum() for p in model.parameters())
         #loss = loss_pred + loss_dom + mixdl_loss_supContraLoss + loss_ortho + 0.00001 * l2_reg
