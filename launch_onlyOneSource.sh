@@ -1,1 +1,1 @@
-python main_onlyOneSource.py ../TreeSatAI/ MS 200 0
+python main_onlyOneSource.py TreeSatAI MS 200 0
