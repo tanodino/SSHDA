@@ -113,10 +113,10 @@ for epoch in range(epochs):
 
         pred = model(x_batch_sar)        
         loss_pred = loss_fn(pred, y_batch_sar)
+        l2_reg = sum(p.pow(2).sum() for p in model.parameters())
 
 
-
-        loss = loss_pred
+        loss = loss_pred + 0.0001 * l2_reg
         loss.backward() # backward pass: backpropagate the prediction loss
         optimizer.step() # gradient descent: adjust the parameters by the gradients collected in the backward pass
         tot_loss+= loss.cpu().detach().numpy()
