@@ -3,7 +3,7 @@ import torch.nn as nn
 import os
 import torch.nn.functional as F
 from torch.autograd import Function
-from torchvision.models import resnet18
+from torchvision.models import resnet18, resnet50
 import numpy as np
 
 
@@ -11,11 +11,13 @@ class ORDisModel(torch.nn.Module):
     def __init__(self, input_channel_source=4, input_channel_target=2, num_classes=10):
         super(ORDisModel, self).__init__()
 
-        source_model = resnet18(weights=None)
+        #source_model = resnet18(weights=None)
+        source_model = resnet50(weights=None)
         source_model.conv1 = nn.Conv2d(input_channel_source, 64, kernel_size=7, stride=2, padding=3,bias=False)
         self.source = nn.Sequential(*list(source_model.children())[:-1])
 
-        target_model = resnet18(weights=None)
+        #target_model = resnet18(weights=None)
+        target_model = resnet50(weights=None)
         target_model.conv1 = nn.Conv2d(input_channel_target, 64, kernel_size=7, stride=2, padding=3,bias=False)
         self.target = nn.Sequential(*list(target_model.children())[:-1])
 
