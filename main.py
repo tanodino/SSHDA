@@ -249,6 +249,6 @@ for epoch in range(epochs):
     #f1_val_ema = f1_score(ema_labels_valid, ema_pred_valid, average="weighted")
     #print("TRAIN LOSS at Epoch %d: %.4f with acc on TEST TARGET SET %.2f with (EMA) acc on TETS TARGET SET %.2f with training time %d"%(epoch, tot_loss/den, 100*f1_val,100*f1_val_ema, (end-start)))    
     print("TRAIN LOSS at Epoch %d: %.4f with acc on TEST TARGET SET %.2f with training time %d"%(epoch, tot_loss/den, 100*f1_val, (end-start)))    
-    
+    sys.stdout.flush()
 
 
