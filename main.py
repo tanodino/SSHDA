@@ -217,7 +217,7 @@ for epoch in range(epochs):
 
         y_inv_labels = np.concatenate([y_batch_source.cpu().detach().numpy(), y_batch_target.cpu().detach().numpy()],axis=0)
 
-        
+        '''
         joint_embedding = torch.cat([inv_emb, emb_source_spec, emb_target_spec],dim=0)
         dom_mix_labels = np.concatenate([np.zeros(inv_emb.shape[0]), np.ones(emb_source_spec.shape[0]), np.ones(emb_target_spec.shape[0])*2],axis=0)
         
@@ -228,7 +228,7 @@ for epoch in range(epochs):
         mixdl_loss_supContraLoss = sim_dist_specifc_loss_spc(joint_embedding, y_mix_labels, dom_mix_labels, scl, epoch)
         '''
         mixdl_loss_supContraLoss = sim_dist_specifc_loss_spc(inv_emb, y_inv_labels, np.zeros_like(y_inv_labels), scl, epoch)
-        '''
+        
         norm_inv_emb = nn.functional.normalize(inv_emb)
         norm_spec_emb = nn.functional.normalize(spec_emb)
         loss_ortho = torch.mean( torch.sum( norm_inv_emb * norm_spec_emb, dim=1) )
