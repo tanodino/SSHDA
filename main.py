@@ -125,9 +125,9 @@ y_train_source = torch.tensor(source_label, dtype=torch.int64)
 import torchvision.transforms as T 
 
 w_size = 128 
-#resize = T.Resize((w_size, w_size), interpolation=T.InterpolationMode.BICUBIC)
+resize = T.Resize((w_size, w_size), interpolation=T.InterpolationMode.BICUBIC)
 print("\tBEFORE RESIZING ",x_train_source.shape)
-#x_train_source = resize(x_train_source)
+x_train_source = resize(x_train_source)
 print("\tAFTER RESIZING ",x_train_source.shape)
 
 dataset_source = TensorDataset(x_train_source, y_train_source)
