@@ -126,6 +126,6 @@ for epoch in range(epochs):
     pred_valid, labels_valid = evaluation(model, dataloader_test, device)
     f1_val = f1_score(labels_valid, pred_valid, average="weighted")
     print("TRAIN LOSS at Epoch %d: %.4f with acc on TEST TARGET SET %.2f with training time %d"%(epoch, tot_loss/den, 100*f1_val,(end-start)))    
-    
+    sys.stdout.flush()
 
 
