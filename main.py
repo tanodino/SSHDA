@@ -273,7 +273,7 @@ for epoch in range(epochs):
         norm_inv_emb = nn.functional.normalize(inv_emb)
         norm_spec_emb = nn.functional.normalize(spec_emb)
         loss_ortho = torch.mean( torch.sum( norm_inv_emb * norm_spec_emb, dim=1) )
-        loss_ortho = torch.maximum( loss_ortho - margin, 0)
+        loss_ortho = torch.maximum( loss_ortho - margin, torch.tensor(0) )
 
         l2_reg = sum(p.pow(2).sum() for p in model.parameters())
         #loss = loss_pred + loss_dom + mixdl_loss_supContraLoss + loss_ortho + 0.00001 * l2_reg
