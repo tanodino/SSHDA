@@ -15,6 +15,31 @@ from torchvision.models import resnet18
 from sklearn.model_selection import train_test_split
 #from torchvision.models import convnext_tiny
 from torch.optim.swa_utils import AveragedModel#, get_ema_multi_avg_fn
+#from torchvision import transforms
+from torch.utils.data import Dataset, DataLoader
+import torchvision.transforms as T 
+
+class MyDataset(Dataset):
+    def __init__(self, data, targets, transform=None):
+        self.data = data
+        self.targets = torch.LongTensor(targets)
+        self.transform = transform
+        
+    def __getitem__(self, index):
+        x = self.data[index]
+        y = self.targets[index]
+        
+        if self.transform:
+            x = self.transform(x)
+        
+        return x, y
+    
+    def __len__(self):
+        return len(self.data)
+
+
+
+
 
 def sim_dist_specifc_loss_spc(spec_emb, ohe_label, ohe_dom, scl, epoch):
     norm_spec_emb = nn.functional.normalize(spec_emb)
@@ -122,21 +147,37 @@ train_target_data, train_target_label = shuffle(train_target_data, train_target_
 x_train_source = torch.tensor(source_data, dtype=torch.float32)
 y_train_source = torch.tensor(source_label, dtype=torch.int64)
 
-import torchvision.transforms as T 
+
 
 w_size = 128 
-resize = T.Resize((w_size, w_size), interpolation=T.InterpolationMode.BICUBIC)
-print("\tBEFORE RESIZING ",x_train_source.shape)
-x_train_source = resize(x_train_source)
-print("\tAFTER RESIZING ",x_train_source.shape)
+#resize = T.Resize((w_size, w_size), interpolation=T.InterpolationMode.BICUBIC)
+#
+#x_train_source = resize(x_train_source)
+#print("\tAFTER RESIZING ",x_train_source.shape)
 
-dataset_source = TensorDataset(x_train_source, y_train_source)
+#dataset_source = TensorDataset(x_train_source, y_train_source)
+
+transform_source = T.Compose([
+    T.Resize(w_size), 
+    T.RandomHorizontalFlip(),
+    T.RandomVerticalFlip(),
+    T.ToTensor()
+    ])
+dataset_source = MyDataset(x_train_source, y_train_source, transform=transform_source)
 dataloader_source = DataLoader(dataset_source, shuffle=True, batch_size=train_batch_size)
 
 #DATALOADER TARGET TRAIN
 x_train_target = torch.tensor(train_target_data, dtype=torch.float32)
 y_train_target = torch.tensor(train_target_label, dtype=torch.int64)
-dataset_train_target = TensorDataset(x_train_target, y_train_target)
+
+transform_target = T.Compose([
+    T.RandomHorizontalFlip(),
+    T.RandomVerticalFlip(),
+    T.ToTensor()
+    ])
+
+#dataset_train_target = TensorDataset(x_train_target, y_train_target)
+dataset_train_target = MyDataset(x_train_target, y_train_target, transform=transform_target)
 dataloader_train_target = DataLoader(dataset_train_target, shuffle=True, batch_size=train_batch_size)
 
 #DATALOADER TARGET TEST
@@ -192,6 +233,7 @@ for epoch in range(epochs):
     start = time.time()
     model.train()
     tot_loss = 0.0
+    tot_ortho_loss = 0.0
     den = 0
     for x_batch_source, y_batch_source in dataloader_source:
         optimizer.zero_grad()
@@ -244,6 +286,7 @@ for epoch in range(epochs):
         #EMA model update
         #ema_model.update_parameters(model)
         tot_loss+= loss.cpu().detach().numpy()
+        tot_ortho_loss+=loss_ortho.cpu().detach().numpy()
         den+=1.
 
     end = time.time()
@@ -252,7 +295,7 @@ for epoch in range(epochs):
     #ema_pred_valid, ema_labels_valid = evaluation(ema_model, dataloader_test_target, device, source_prefix)
     #f1_val_ema = f1_score(ema_labels_valid, ema_pred_valid, average="weighted")
     #print("TRAIN LOSS at Epoch %d: %.4f with acc on TEST TARGET SET %.2f with (EMA) acc on TETS TARGET SET %.2f with training time %d"%(epoch, tot_loss/den, 100*f1_val,100*f1_val_ema, (end-start)))    
-    print("TRAIN LOSS at Epoch %d: %.4f with acc on TEST TARGET SET %.2f with training time %d"%(epoch, tot_loss/den, 100*f1_val, (end-start)))    
+    print("TRAIN LOSS at Epoch %d: %.4f with ORTHO LOSS %.4f acc on TEST TARGET SET %.2f with training time %d"%(epoch, tot_loss/den, tot_ortho_loss/den, 100*f1_val, (end-start)))    
     sys.stdout.flush()
 
 
