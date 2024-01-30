@@ -217,13 +217,13 @@ for epoch in range(epochs):
 
         y_inv_labels = np.concatenate([y_batch_source.cpu().detach().numpy(), y_batch_target.cpu().detach().numpy()],axis=0)
 
-        '''
-        joint_embedding = torch.cat([inv_emb, emb_opt_spec, emb_sar_spec],dim=0)
-        dom_mix_labels = np.concatenate([np.zeros(inv_emb.shape[0]), np.ones(emb_opt_spec.shape[0]), np.ones(emb_sar_spec.shape[0])*2],axis=0)
+        
+        joint_embedding = torch.cat([inv_emb, emb_source_spec, emb_target_spec],dim=0)
+        dom_mix_labels = np.concatenate([np.zeros(inv_emb.shape[0]), np.ones(emb_source_spec.shape[0]), np.ones(emb_target_spec.shape[0])*2],axis=0)
         
         
-        #y_mix_labels = np.concatenate([y_inv_labels, np.ones(emb_opt_spec.shape[0]), np.ones(emb_sar_spec.shape[0]) ],axis=0)
-        y_mix_labels = np.concatenate([y_inv_labels, y_batch_opt.cpu().detach().numpy(), y_batch_sar.cpu().detach().numpy() ],axis=0)
+        #y_mix_labels = np.concatenate([y_inv_labels, np.ones(emb_source_spec.shape[0]), np.ones(emb_target_spec.shape[0]) ],axis=0)
+        y_mix_labels = np.concatenate([y_inv_labels, y_batch_source.cpu().detach().numpy(), y_batch_target.cpu().detach().numpy() ],axis=0)
         
         mixdl_loss_supContraLoss = sim_dist_specifc_loss_spc(joint_embedding, y_mix_labels, dom_mix_labels, scl, epoch)
         '''
@@ -231,11 +231,12 @@ for epoch in range(epochs):
         norm_inv_emb = nn.functional.normalize(inv_emb)
         norm_spec_emb = nn.functional.normalize(spec_emb)
         loss_ortho = torch.mean( torch.sum( norm_inv_emb * norm_spec_emb, dim=1) )
-
+        '''
 
         l2_reg = sum(p.pow(2).sum() for p in model.parameters())
         #loss = loss_pred + loss_dom + mixdl_loss_supContraLoss + loss_ortho + 0.00001 * l2_reg
-        loss = loss_pred + mixdl_loss_supContraLoss + loss_ortho + 0.00001 * l2_reg
+        loss = loss_pred + loss_dom + mixdl_loss_supContraLoss + 0.00001 * l2_reg
+        #loss = loss_pred + mixdl_loss_supContraLoss + loss_ortho + 0.00001 * l2_reg
         
         loss.backward() # backward pass: backpropagate the prediction loss
         optimizer.step() # gradient descent: adjust the parameters by the gradients collected in the backward pass
