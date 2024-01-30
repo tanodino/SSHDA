@@ -83,7 +83,7 @@ print("source_data ",source_data.shape)
 print("target_data ",target_data.shape)
 print("source_label ",source_label.shape)
 print("target_label ",target_label.shape)
-
+sys.stdout.flush()
 train_target_idx = np.load("%s/%s_%s_%s_train_idx.npy"%(dir, target_prefix, nsplit, nsamples))
 test_target_idx = np.setdiff1d(np.arange(target_data.shape[0]), train_target_idx)
 
@@ -96,7 +96,7 @@ test_target_label = target_label[test_target_idx]
 print("TRAININg ID SELECTED")
 print("train_target_data ",train_target_data.shape)
 print("train_target_label ",train_target_label.shape)
-
+sys.stdout.flush()
 #source_data, source_label = dataAugRotate(source_data, source_label, (1,2))
 train_target_data, train_target_label = dataAugRotate(train_target_data, train_target_label, (1,2))
 
@@ -105,7 +105,7 @@ print("source_data ",source_data.shape)
 print("train_target_data ",train_target_data.shape)
 print("source_label ",source_label.shape)
 print("train_target_label ",train_target_label.shape)
-
+sys.stdout.flush()
 n_classes = len(np.unique(source_label))
 
 
@@ -170,7 +170,7 @@ else:
 
 print("source_data.shape[1] ",source_data.shape[1])
 print("target_data.shape[1] ",target_data.shape[1])
-
+sys.stdout.flush()
 model = ORDisModel(input_channel_source=source_data.shape[1], input_channel_target=target_data.shape[1], num_classes=n_classes)
 model = model.to(device)
 #decay = 0.999
