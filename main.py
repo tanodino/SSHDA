@@ -160,8 +160,7 @@ w_size = 128
 transform_source = T.Compose([
     T.Resize(w_size), 
     T.RandomHorizontalFlip(),
-    T.RandomVerticalFlip(),
-    T.ToTensor()
+    T.RandomVerticalFlip()
     ])
 dataset_source = MyDataset(x_train_source, y_train_source, transform=transform_source)
 dataloader_source = DataLoader(dataset_source, shuffle=True, batch_size=train_batch_size)
@@ -172,8 +171,7 @@ y_train_target = torch.tensor(train_target_label, dtype=torch.int64)
 
 transform_target = T.Compose([
     T.RandomHorizontalFlip(),
-    T.RandomVerticalFlip(),
-    T.ToTensor()
+    T.RandomVerticalFlip()
     ])
 
 #dataset_train_target = TensorDataset(x_train_target, y_train_target)
