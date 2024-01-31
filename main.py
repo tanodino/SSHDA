@@ -303,7 +303,7 @@ for epoch in range(epochs):
         tot_ortho_loss+=loss_ortho.cpu().detach().numpy()
         den+=1.
 
-    if int(tot_ortho_loss * 1000) == 0:
+    if int(tot_ortho_loss/den * 1000) == 0:
         previous_margin = margin
         margin = margin * decreasing_coeff
         print("\T\T\T MARGIN decreasing from %f to %f"%(previous_margin,margin))
