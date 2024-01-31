@@ -22,7 +22,7 @@ import torchvision.transforms.functional as TF
 import random
 from typing import Sequence
 
-class MyRotateTransform(T):
+class MyRotateTransform():
     def __init__(self, angles: Sequence[int]):
         self.angles = angles
 
@@ -173,7 +173,7 @@ transform_source = T.Compose([
     T.Resize(w_size,antialias=True), 
     T.RandomHorizontalFlip(),
     T.RandomVerticalFlip(),
-    T.RandomApply(torch.nn.ModuleList([MyRotateTransform(angles=angle)], p=0.5))
+    T.RandomApply(torch.nn.ModuleList([MyRotateTransform(angles=angle)]), p=0.5)
     ])
 dataset_source = MyDataset(x_train_source, y_train_source, transform=transform_source)
 dataloader_source = DataLoader(dataset_source, shuffle=True, batch_size=train_batch_size)
@@ -185,7 +185,7 @@ y_train_target = torch.tensor(train_target_label, dtype=torch.int64)
 transform_target = T.Compose([
     T.RandomHorizontalFlip(),
     T.RandomVerticalFlip(),
-    T.RandomApply(torch.nn.ModuleList([MyRotateTransform(angles=angle)], p=0.5))
+    T.RandomApply(torch.nn.ModuleList([MyRotateTransform(angles=angle)]), p=0.5)
     ])
 
 #dataset_train_target = TensorDataset(x_train_target, y_train_target)
