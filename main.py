@@ -196,7 +196,7 @@ dataloader_train_target = DataLoader(dataset_train_target, shuffle=True, batch_s
 x_test_target = torch.tensor(test_target_data, dtype=torch.float32)
 y_test_target = torch.tensor(test_target_label, dtype=torch.int64)
 dataset_test_target = TensorDataset(x_test_target, y_test_target)
-dataloader_test_target = DataLoader(dataset_test_target, shuffle=False, batch_size=128)
+dataloader_test_target = DataLoader(dataset_test_target, shuffle=False, batch_size=512)
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
