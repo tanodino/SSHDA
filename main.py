@@ -18,6 +18,18 @@ from torch.optim.swa_utils import AveragedModel#, get_ema_multi_avg_fn
 #from torchvision import transforms
 from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as T 
+import torchvision.transforms.functional as TF
+import random
+from typing import Sequence
+
+class MyRotateTransform:
+    def __init__(self, angles: Sequence[int]):
+        self.angles = angles
+
+    def __call__(self, x):
+        angle = random.choice(self.angles)
+        return TF.rotate(x, angle)
+
 
 class MyDataset(Dataset):
     def __init__(self, data, targets, transform=None):
@@ -156,11 +168,12 @@ w_size = 128
 #print("\tAFTER RESIZING ",x_train_source.shape)
 
 #dataset_source = TensorDataset(x_train_source, y_train_source)
-
+angle = random.choice([0, 90, 180, 270])
 transform_source = T.Compose([
     T.Resize(w_size,antialias=True), 
     T.RandomHorizontalFlip(),
-    T.RandomVerticalFlip()
+    T.RandomVerticalFlip(),
+    MyRotateTransform(angle)
     ])
 dataset_source = MyDataset(x_train_source, y_train_source, transform=transform_source)
 dataloader_source = DataLoader(dataset_source, shuffle=True, batch_size=train_batch_size)
@@ -171,7 +184,8 @@ y_train_target = torch.tensor(train_target_label, dtype=torch.int64)
 
 transform_target = T.Compose([
     T.RandomHorizontalFlip(),
-    T.RandomVerticalFlip()
+    T.RandomVerticalFlip(),
+    MyRotateTransform(angle)
     ])
 
 #dataset_train_target = TensorDataset(x_train_target, y_train_target)
