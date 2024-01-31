@@ -242,6 +242,7 @@ epochs = 300
 # Loop through the data
 valid_f1 = 0.0
 margin = .3
+decreasing_coeff = 0.95
 for epoch in range(epochs):
     start = time.time()
     model.train()
@@ -301,6 +302,11 @@ for epoch in range(epochs):
         tot_loss+= loss.cpu().detach().numpy()
         tot_ortho_loss+=loss_ortho.cpu().detach().numpy()
         den+=1.
+
+    if int(tot_ortho_loss * 1000) == 0:
+        previous_margin = margin
+        margin = margin * decreasing_coeff
+        print("\T\T\T MARGIN decreasing from %f to %f"%(previous_margin,margin))
 
     end = time.time()
     pred_valid, labels_valid = evaluation(model, dataloader_test_target, device, source_prefix)
