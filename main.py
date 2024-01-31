@@ -168,12 +168,12 @@ w_size = 128
 #print("\tAFTER RESIZING ",x_train_source.shape)
 
 #dataset_source = TensorDataset(x_train_source, y_train_source)
-angle = random.choice([0, 90, 180, 270])
+angle = [0, 90, 180, 270]
 transform_source = T.Compose([
     T.Resize(w_size,antialias=True), 
     T.RandomHorizontalFlip(),
     T.RandomVerticalFlip(),
-    MyRotateTransform(angle)
+    T.RandomApply(MyRotateTransform(angles=angle),p=0.5)
     ])
 dataset_source = MyDataset(x_train_source, y_train_source, transform=transform_source)
 dataloader_source = DataLoader(dataset_source, shuffle=True, batch_size=train_batch_size)
@@ -185,7 +185,7 @@ y_train_target = torch.tensor(train_target_label, dtype=torch.int64)
 transform_target = T.Compose([
     T.RandomHorizontalFlip(),
     T.RandomVerticalFlip(),
-    MyRotateTransform(angle)
+    T.RandomApply(MyRotateTransform(angles=angle), p=0.5)
     ])
 
 #dataset_train_target = TensorDataset(x_train_target, y_train_target)
