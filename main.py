@@ -234,7 +234,8 @@ model = model.to(device)
 
 learning_rate = 0.0001
 loss_fn = nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(params=model.parameters(), lr=learning_rate)
+base_optimizer = torch.optim.AdamW(params=model.parameters(), lr=learning_rate)
+optimizer = torchcontrib.optim.SWA(base_optimizer, swa_start=10, swa_freq=5, swa_lr=0.05)
 scl = SupervisedContrastiveLoss()
 
 
@@ -297,6 +298,9 @@ for epoch in range(epochs):
         
         loss.backward() # backward pass: backpropagate the prediction loss
         optimizer.step() # gradient descent: adjust the parameters by the gradients collected in the backward pass
+        
+        #SWA : average at each iteration
+        optimizer.update_swa()
         #EMA model update
         #ema_model.update_parameters(model)
         tot_loss+= loss.cpu().detach().numpy()
@@ -317,4 +321,8 @@ for epoch in range(epochs):
     print("TRAIN LOSS at Epoch %d: %.4f with ORTHO LOSS %.4f acc on TEST TARGET SET %.2f with training time %d"%(epoch, tot_loss/den, tot_ortho_loss/den, 100*f1_val, (end-start)))    
     sys.stdout.flush()
 
+optimizer.swap_swa_sgd()
+pred_valid, labels_valid = evaluation(model, dataloader_test_target, device, source_prefix)
+f1_val = f1_score(labels_valid, pred_valid, average="weighted")
+print("SWA MODEL FINAL ACCURACY ON TEST TARGET SET %.2f"%(100*f1_val))    
 
