@@ -253,6 +253,7 @@ for epoch in range(epochs):
     tot_ortho_loss = 0.0
     den = 0
     for x_batch_source, y_batch_source in dataloader_source:
+        print("ciao")
         optimizer.zero_grad()
         x_batch_target, y_batch_target = next(iter(dataloader_train_target))
 
