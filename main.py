@@ -245,6 +245,7 @@ epochs = 5#300
 valid_f1 = 0.0
 margin = .3
 decreasing_coeff = 0.95
+i = 0
 for epoch in range(epochs):
     start = time.time()
     model.train()
@@ -301,9 +302,10 @@ for epoch in range(epochs):
         optimizer.step() # gradient descent: adjust the parameters by the gradients collected in the backward pass
         
         #SWA : average at each iteration
-        optimizer.update_swa()
-        #EMA model update
-        #ema_model.update_parameters(model)
+        if i > 10 and i % 5 == 0:
+            optimizer.update_swa()
+        i+=1
+        
         tot_loss+= loss.cpu().detach().numpy()
         tot_ortho_loss+=loss_ortho.cpu().detach().numpy()
         den+=1.
