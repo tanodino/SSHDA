@@ -39,7 +39,7 @@ def modify_weights(model, ghost_weights, alpha, epoch):
     for k in state_dict:
         current_weights[k] = torch.tensor( ghost_weights[k] )
     
-    return current_weights
+    return current_weights, ghost_weights
 
 def retrieveModelWeights(model):
     ##### REASONING FLAT MINIMA #####
@@ -408,7 +408,7 @@ for epoch in range(epochs):
         print("\T\T\T MARGIN decreasing from %f to %f"%(previous_margin,margin))
 
     #MANUAL IMPLEMENTAITON OF THE EMA OPERATION
-    current_weights = modify_weights(model, ghost_weights, momentum_ema, epoch)
+    current_weights, ghost_weights = modify_weights(model, ghost_weights, momentum_ema, epoch)
     model.load_state_dict(current_weights)
 
     end = time.time()
