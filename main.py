@@ -22,6 +22,30 @@ import torchvision.transforms.functional as TF
 import random
 from typing import Sequence
 import torchcontrib
+from collections import OrderedDict
+
+def modify_weights(model, ghost_weights, alpha, epoch):
+    if ghost_weights is None:
+        state_dict = model.state_dict()
+        ghost_weights = OrderedDict()
+        for k in state_dict:
+            ghost_weights[k] = state_dict[k].cpu().detach().numpy()
+    else:
+        state_dict = model.state_dict()
+        for k in state_dict:
+            temp_weights = state_dict[k].cpu().detach().numpy()
+            ghost_weights[k] = ( alpha*(ghost_weights[k] * epoch) + (1-alpha)*temp_weights) / float(epoch+1)
+    return ghost_weights
+
+def retrieveModelWeights(model):
+    ##### REASONING FLAT MINIMA #####
+    state_dict = model.state_dict()
+    to_save = OrderedDict()
+    for k in state_dict:
+        to_save[k] = state_dict[k].cpu().detach().numpy()
+    return to_save
+
+
 
 
 
@@ -304,6 +328,9 @@ valid_f1 = 0.0
 margin = .3
 decreasing_coeff = 0.95
 i = 0
+model_weights = []
+ghost_weights = None
+momentum_ema = 0.99
 for epoch in range(epochs):
     start = time.time()
     model.train()
@@ -376,6 +403,10 @@ for epoch in range(epochs):
         margin = margin * decreasing_coeff
         print("\T\T\T MARGIN decreasing from %f to %f"%(previous_margin,margin))
 
+    #MANUAL IMPLEMENTAITON OF THE EMA OPERATION
+    current_weights = modify_weights(model, ghost_weights, momentum_ema, epoch)
+    model.load_state_dict(current_weights)
+
     end = time.time()
     pred_valid, labels_valid = evaluation(model, dataloader_test_target, device)
     f1_val = f1_score(labels_valid, pred_valid, average="weighted")
@@ -384,14 +415,16 @@ for epoch in range(epochs):
     #print("TRAIN LOSS at Epoch %d: %.4f with acc on TEST TARGET SET %.2f with (EMA) acc on TETS TARGET SET %.2f with training time %d"%(epoch, tot_loss/den, 100*f1_val,100*f1_val_ema, (end-start)))    
     print("TRAIN LOSS at Epoch %d: %.4f with ORTHO LOSS %.4f acc on TEST TARGET SET %.2f with training time %d"%(epoch, tot_loss/den, tot_ortho_loss/den, 100*f1_val, (end-start)))    
     sys.stdout.flush()
+    
+
+#path = "prova.pth"
+#torch.save(swa_model.state_dict(), path)
+#model.load_state_dict(torch.load(path))
 
 
-path = "prova.pth"
-torch.save(swa_model.state_dict(), path)
-model.load_state_dict(torch.load(path))
 
 #optimizer.swap_swa_sgd()
-pred_valid, labels_valid = evaluation(model, dataloader_test_target, device)
-f1_val = f1_score(labels_valid, pred_valid, average="weighted")
-print("SWA MODEL FINAL ACCURACY ON TEST TARGET SET %.2f"%(100*f1_val))    
+#pred_valid, labels_valid = evaluation(model, dataloader_test_target, device)
+#f1_val = f1_score(labels_valid, pred_valid, average="weighted")
+#print("SWA MODEL FINAL ACCURACY ON TEST TARGET SET %.2f"%(100*f1_val))    
 
