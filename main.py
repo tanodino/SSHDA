@@ -227,6 +227,8 @@ print("target_data.shape[1] ",target_data.shape[1])
 sys.stdout.flush()
 model = ORDisModel(input_channel_source=source_data.shape[1], input_channel_target=target_data.shape[1], num_classes=n_classes)
 model = model.to(device)
+swa_model = torch.optim.swa_utils.AveragedModel(model)
+
 #decay = 0.999
 #ema_model = AveragedModel(model, multi_avg_fn=get_ema_multi_avg_fn(decay))
 #ema_model = AveragedModel(model)
@@ -303,10 +305,11 @@ for epoch in range(epochs):
         optimizer.step() # gradient descent: adjust the parameters by the gradients collected in the backward pass
         
         #SWA : average at each iteration
-        if i > 10 and i % 5 == 0:
-            optimizer.update_swa()
-        i+=1
-        
+        #if i > 10 and i % 5 == 0:
+        #    optimizer.update_swa()
+        #i+=1
+        swa_model.update_parameters(model)
+
         tot_loss+= loss.cpu().detach().numpy()
         tot_ortho_loss+=loss_ortho.cpu().detach().numpy()
         den+=1.
@@ -326,7 +329,7 @@ for epoch in range(epochs):
     sys.stdout.flush()
 
 optimizer.swap_swa_sgd()
-pred_valid, labels_valid = evaluation(model, dataloader_test_target, device, source_prefix)
+pred_valid, labels_valid = evaluation(swa_model, dataloader_test_target, device, source_prefix)
 f1_val = f1_score(labels_valid, pred_valid, average="weighted")
 print("SWA MODEL FINAL ACCURACY ON TEST TARGET SET %.2f"%(100*f1_val))    
 
