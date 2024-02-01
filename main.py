@@ -235,7 +235,7 @@ model = model.to(device)
 
 learning_rate = 0.0001
 loss_fn = nn.CrossEntropyLoss()
-base_optimizer = torch.optim.Adam(params=model.parameters(), lr=learning_rate)
+base_optimizer = torch.optim.SGD(params=model.parameters(), lr=learning_rate)
 optimizer = torchcontrib.optim.SWA(base_optimizer, swa_start=10, swa_freq=5, swa_lr=0.05)
 scl = SupervisedContrastiveLoss()
 
