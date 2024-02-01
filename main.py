@@ -125,7 +125,7 @@ def sim_dist_specifc_loss_spc(spec_emb, ohe_label, ohe_dom, scl, epoch):
 
 
 #evaluation(model, dataloader_test_target, device, source_prefix)
-def evaluation(model, dataloader, device, source_prefix):
+def evaluation(model, dataloader, device):
     model.eval()
     tot_pred = []
     tot_labels = []
@@ -298,7 +298,7 @@ optimizer = torch.optim.AdamW(params=model.parameters(), lr=learning_rate)
 scl = SupervisedContrastiveLoss()
 
 
-epochs = 5#300
+epochs = 300
 # Loop through the data
 valid_f1 = 0.0
 margin = .3
@@ -377,7 +377,7 @@ for epoch in range(epochs):
         print("\T\T\T MARGIN decreasing from %f to %f"%(previous_margin,margin))
 
     end = time.time()
-    pred_valid, labels_valid = evaluation(model, dataloader_test_target, device, source_prefix)
+    pred_valid, labels_valid = evaluation(model, dataloader_test_target, device)
     f1_val = f1_score(labels_valid, pred_valid, average="weighted")
     #ema_pred_valid, ema_labels_valid = evaluation(ema_model, dataloader_test_target, device, source_prefix)
     #f1_val_ema = f1_score(ema_labels_valid, ema_pred_valid, average="weighted")
@@ -385,8 +385,13 @@ for epoch in range(epochs):
     print("TRAIN LOSS at Epoch %d: %.4f with ORTHO LOSS %.4f acc on TEST TARGET SET %.2f with training time %d"%(epoch, tot_loss/den, tot_ortho_loss/den, 100*f1_val, (end-start)))    
     sys.stdout.flush()
 
+
+path = "prova.pth"
+torch.save(swa_model.state_dict(), path)
+model.load_state_dict(torch.load(path))
+
 #optimizer.swap_swa_sgd()
-pred_valid, labels_valid = evaluation(swa_model, dataloader_test_target, device, source_prefix)
+pred_valid, labels_valid = evaluation(model, dataloader_test_target, device)
 f1_val = f1_score(labels_valid, pred_valid, average="weighted")
 print("SWA MODEL FINAL ACCURACY ON TEST TARGET SET %.2f"%(100*f1_val))    
 
