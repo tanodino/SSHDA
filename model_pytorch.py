@@ -8,7 +8,7 @@ import numpy as np
 
 
 class ORDisModel(torch.nn.Module):
-    def __init__(self, input_channel_source=4, input_channel_target=2, num_classes=10):
+    def __init__(self, input_channel_source=4, input_channel_target=2, emb_dim = 256, num_classes=10):
         super(ORDisModel, self).__init__()
 
         source_model = resnet18(weights=None)
@@ -40,8 +40,8 @@ class ORDisModel(torch.nn.Module):
         self.sar_spec = nn.Sequential(*list(sar_model.children())[:-1])
         '''
 
-        self.domain_cl = FC_Classifier(256, 2)        
-        self.task_cl = FC_Classifier(256, num_classes)        
+        self.domain_cl = FC_Classifier_NoLazy(emb_dim, 256, 2)        
+        self.task_cl = FC_Classifier_NoLazy(emb_dim, 256, num_classes)        
 
     
     def forward_source(self, x, source):
@@ -59,9 +59,6 @@ class ORDisModel(torch.nn.Module):
         nfeat = emb.shape[1]
         emb_inv = emb[:,0:nfeat//2]
         emb_spec = emb[:,nfeat//2::]
-        print(emb_inv.shape)
-        print(emb_spec.shape)
-        exit()
         return emb_inv, emb_spec, self.domain_cl(emb_spec), self.task_cl(emb_inv)
         
     
