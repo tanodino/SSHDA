@@ -26,20 +26,21 @@ from collections import OrderedDict
 
 def modify_weights(model, ghost_weights, alpha, epoch):
     current_weights = OrderedDict()
+    current_weights_npy = OrderedDict()
     state_dict = model.state_dict()
     if ghost_weights is None:
         ghost_weights = OrderedDict()
         for k in state_dict:
-            ghost_weights[k] = state_dict[k].cpu().detach().numpy()
+            current_weights_npy[k] = state_dict[k].cpu().detach().numpy()
     else:
         for k in state_dict:
             temp_weights = state_dict[k].cpu().detach().numpy()
-            ghost_weights[k] = ( alpha*(ghost_weights[k] * epoch) + (1-alpha)*temp_weights) / float(epoch+1)
+            current_weights_npy[k] = ( alpha*(ghost_weights[k] * epoch) + (1-alpha) * temp_weights ) / float(epoch+1)
     
     for k in state_dict:
-        current_weights[k] = torch.tensor( ghost_weights[k] )
+        current_weights[k] = torch.tensor( current_weights_npy[k] )
     
-    return current_weights, ghost_weights
+    return current_weights, current_weights_npy
 
 def retrieveModelWeights(model):
     ##### REASONING FLAT MINIMA #####
