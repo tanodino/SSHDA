@@ -29,17 +29,21 @@ def modify_weights(model, ghost_weights, alpha, epoch):
     current_weights_npy = OrderedDict()
     state_dict = model.state_dict()
     
+    for k in state_dict:
+        current_weights_npy[k] = state_dict[k].cpu().detach().numpy()
+
+    if ghost_weights is not None:
+        for k in state_dict:
+            current_weights_npy[k] = alpha * ghost_weights[k] + (1-alpha) * current_weights_npy[k]
+    
+    '''
     if ghost_weights is None:
-        ghost_weights = OrderedDict()
         for k in state_dict:
             current_weights_npy[k] = state_dict[k].cpu().detach().numpy()
     else:
         for k in state_dict:
             temp_weights = state_dict[k].cpu().detach().numpy()
             current_weights_npy[k] = alpha * ghost_weights[k] + (1-alpha) * temp_weights
-    '''
-    for k in state_dict:
-        current_weights_npy[k] = state_dict[k].cpu().detach().numpy()
     '''
     
     for k in state_dict:
@@ -332,7 +336,7 @@ optimizer = torch.optim.AdamW(params=model.parameters(), lr=learning_rate)
 scl = SupervisedContrastiveLoss()
 
 
-epochs = 50#300
+epochs = 300#300
 # Loop through the data
 valid_f1 = 0.0
 margin = .3
