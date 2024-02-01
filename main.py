@@ -326,7 +326,7 @@ optimizer = torch.optim.AdamW(params=model.parameters(), lr=learning_rate)
 scl = SupervisedContrastiveLoss()
 
 
-epochs = 3#300
+epochs = 50#300
 # Loop through the data
 valid_f1 = 0.0
 margin = .3
