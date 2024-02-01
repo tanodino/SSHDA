@@ -21,6 +21,7 @@ import torchvision.transforms as T
 import torchvision.transforms.functional as TF
 import random
 from typing import Sequence
+import torchcontrib
 
 class MyRotateTransform():
     def __init__(self, angles: Sequence[int]):
@@ -239,7 +240,7 @@ optimizer = torchcontrib.optim.SWA(base_optimizer, swa_start=10, swa_freq=5, swa
 scl = SupervisedContrastiveLoss()
 
 
-epochs = 300
+epochs = 5#300
 # Loop through the data
 valid_f1 = 0.0
 margin = .3
