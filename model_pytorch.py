@@ -213,7 +213,7 @@ class Conv1D_BatchNorm_Relu_Dropout(torch.nn.Module):
 
 class FC_Classifier_NoLazy(torch.nn.Module):
     def __init__(self, input_dim, hidden_dims, n_classes, drop_probability=0.5):
-        super(FC_Classifier, self).__init__()
+        super(FC_Classifier_NoLazy, self).__init__()
 
         self.block = nn.Sequential(
             nn.Linear(input_dim, hidden_dims),
