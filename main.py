@@ -311,7 +311,7 @@ for epoch in range(epochs):
     tot_ortho_loss = 0.0
     den = 0
     for x_batch_source, y_batch_source in dataloader_source:
-        print("ciao")
+        #print("ciao")
         optimizer.zero_grad()
         x_batch_target, y_batch_target = next(iter(dataloader_train_target))
 
@@ -364,7 +364,7 @@ for epoch in range(epochs):
         #if i > 10 and i % 5 == 0:
         #    optimizer.update_swa()
         #i+=1
-        if e > 0:
+        if epoch > 0:
             swa_model.update_parameters(model)
 
         tot_loss+= loss.cpu().detach().numpy()
