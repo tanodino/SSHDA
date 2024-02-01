@@ -28,7 +28,7 @@ def modify_weights(model, ghost_weights, alpha, epoch):
     current_weights = OrderedDict()
     current_weights_npy = OrderedDict()
     state_dict = model.state_dict()
-    '''
+    
     if ghost_weights is None:
         ghost_weights = OrderedDict()
         for k in state_dict:
@@ -36,10 +36,12 @@ def modify_weights(model, ghost_weights, alpha, epoch):
     else:
         for k in state_dict:
             temp_weights = state_dict[k].cpu().detach().numpy()
-            current_weights_npy[k] = ( alpha*(ghost_weights[k] * epoch) + (1-alpha) * temp_weights ) / float(epoch+1)
+            current_weights_npy[k] = alpha * ghost_weights[k] + (1-alpha) * temp_weights
     '''
     for k in state_dict:
         current_weights_npy[k] = state_dict[k].cpu().detach().numpy()
+    '''
+    
     for k in state_dict:
         current_weights[k] = torch.tensor( current_weights_npy[k] )
     
