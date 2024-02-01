@@ -59,6 +59,9 @@ class ORDisModel(torch.nn.Module):
         nfeat = emb.shape[1]
         emb_inv = emb[:,0:nfeat//2]
         emb_spec = emb[:,nfeat//2::]
+        print(emb_inv.shape)
+        print(emb_spec.shape)
+        exit()
         return emb_inv, emb_spec, self.domain_cl(emb_spec), self.task_cl(emb_inv)
         
     
@@ -209,6 +212,24 @@ class Conv1D_BatchNorm_Relu_Dropout(torch.nn.Module):
 
     def forward(self, X):
         return self.block(X)
+
+
+class FC_Classifier_NoLazy(torch.nn.Module):
+    def __init__(self, input_dim, hidden_dims, n_classes, drop_probability=0.5):
+        super(FC_Classifier, self).__init__()
+
+        self.block = nn.Sequential(
+            nn.Linear(input_dim, hidden_dims),
+            nn.BatchNorm1d(hidden_dims),
+            nn.ReLU(),
+            nn.Dropout(p=drop_probability),
+            nn.Linear(hidden_dims,n_classes)
+        )
+    
+    def forward(self, X):
+        return self.block(X)
+
+
 
 class FC_Classifier(torch.nn.Module):
     def __init__(self, hidden_dims, n_classes, drop_probability=0.5):
