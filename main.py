@@ -24,7 +24,7 @@ from typing import Sequence
 import torchcontrib
 from collections import OrderedDict
 
-def modify_weights(model, ghost_weights, alpha, epoch):
+def modify_weights(model, ghost_weights, alpha):
     current_weights = OrderedDict()
     current_weights_npy = OrderedDict()
     state_dict = model.state_dict()
@@ -321,7 +321,6 @@ print("target_data.shape[1] ",target_data.shape[1])
 sys.stdout.flush()
 model = ORDisModel(input_channel_source=source_data.shape[1], input_channel_target=target_data.shape[1], num_classes=n_classes)
 model = model.to(device)
-swa_model = torch.optim.swa_utils.AveragedModel(model)
 
 #decay = 0.999
 #ema_model = AveragedModel(model, multi_avg_fn=get_ema_multi_avg_fn(decay))
@@ -401,13 +400,6 @@ for epoch in range(epochs):
         loss.backward() # backward pass: backpropagate the prediction loss
         optimizer.step() # gradient descent: adjust the parameters by the gradients collected in the backward pass
         
-        #SWA : average at each iteration
-        #if i > 10 and i % 5 == 0:
-        #    optimizer.update_swa()
-        #i+=1
-        if epoch > 0:
-            swa_model.update_parameters(model)
-
         tot_loss+= loss.cpu().detach().numpy()
         tot_ortho_loss+=loss_ortho.cpu().detach().numpy()
         den+=1.
@@ -418,8 +410,9 @@ for epoch in range(epochs):
         print("\T\T\T MARGIN decreasing from %f to %f"%(previous_margin,margin))
 
     #MANUAL IMPLEMENTAITON OF THE EMA OPERATION
-    current_weights, ghost_weights = modify_weights(model, ghost_weights, momentum_ema, epoch)
-    model.load_state_dict(current_weights)
+    if epoch >= 10:
+        current_weights, ghost_weights = modify_weights(model, ghost_weights, momentum_ema)
+        model.load_state_dict(current_weights)
 
     end = time.time()
     pred_valid, labels_valid = evaluation(model, dataloader_test_target, device)
