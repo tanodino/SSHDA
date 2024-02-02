@@ -66,11 +66,9 @@ def retrieveModelWeights(model):
 @torch.no_grad()
 def update_bn(dataloader_source, dataloader_train_target, model):
     model.train()
-    for x_batch_source, y_batch_source in dataloader_source:
-        #print("ciao")
-        #optimizer.zero_grad()
-        x_batch_target, y_batch_target = next(iter(dataloader_train_target))
-
+    for x_batch_target, y_batch_target in dataloader_train_target:
+        x_batch_source, y_batch_source = next(iter(dataloader_source))
+        
         x_batch_source = x_batch_source.to(device)
         y_batch_source = y_batch_source.to(device)
         
