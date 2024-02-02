@@ -335,7 +335,7 @@ optimizer = torch.optim.AdamW(params=model.parameters(), lr=learning_rate)
 scl = SupervisedContrastiveLoss()
 
 
-epochs = 300#300
+epochs = 1000#300
 # Loop through the data
 valid_f1 = 0.0
 margin = .3
@@ -410,7 +410,7 @@ for epoch in range(epochs):
         print("\T\T\T MARGIN decreasing from %f to %f"%(previous_margin,margin))
 
     #MANUAL IMPLEMENTAITON OF THE EMA OPERATION
-    if epoch >= 10:
+    if epoch >= 50:
         current_weights, ghost_weights = modify_weights(model, ghost_weights, momentum_ema)
         model.load_state_dict(current_weights)
 
