@@ -64,57 +64,21 @@ def retrieveModelWeights(model):
 
 
 @torch.no_grad()
-def update_bn(loader, model, device=None):
-    r"""Updates BatchNorm running_mean, running_var buffers in the model.
-
-    It performs one pass over data in `loader` to estimate the activation
-    statistics for BatchNorm layers in the model.
-    Args:
-        loader (torch.utils.data.DataLoader): dataset loader to compute the
-            activation statistics on. Each data batch should be either a
-            tensor, or a list/tuple whose first element is a tensor
-            containing data.
-        model (torch.nn.Module): model for which we seek to update BatchNorm
-            statistics.
-        device (torch.device, optional): If set, data will be transferred to
-            :attr:`device` before being passed into :attr:`model`.
-
-    Example:
-        >>> # xdoctest: +SKIP("Undefined variables")
-        >>> loader, model = ...
-        >>> torch.optim.swa_utils.update_bn(loader, model)
-
-    .. note::
-        The `update_bn` utility assumes that each data batch in :attr:`loader`
-        is either a tensor or a list or tuple of tensors; in the latter case it
-        is assumed that :meth:`model.forward()` should be called on the first
-        element of the list or tuple corresponding to the data batch.
-    """
-    momenta = {}
-    for module in model.modules():
-        if isinstance(module, torch.nn.modules.batchnorm._BatchNorm):
-            module.reset_running_stats()
-            momenta[module] = module.momentum
-
-    if not momenta:
-        return
-
-    was_training = model.training
+def update_bn(dataloader_source, dataloader_train_target, model):
     model.train()
-    for module in momenta.keys():
-        module.momentum = None
+    for x_batch_source, y_batch_source in dataloader_source:
+        #print("ciao")
+        optimizer.zero_grad()
+        x_batch_target, y_batch_target = next(iter(dataloader_train_target))
 
-    for input in loader:
-        if isinstance(input, (list, tuple)):
-            input = input[0]
-        if device is not None:
-            input = input.to(device)
+        x_batch_source = x_batch_source.to(device)
+        y_batch_source = y_batch_source.to(device)
+        
+        x_batch_target = x_batch_target.to(device)
+        y_batch_target = y_batch_target.to(device)
 
-        model(input)
+        model([x_batch_source, x_batch_target])
 
-    for bn_module in momenta.keys():
-        bn_module.momentum = momenta[bn_module]
-    model.train(was_training)
 
 
 class MyRotateTransform():
@@ -335,7 +299,7 @@ optimizer = torch.optim.AdamW(params=model.parameters(), lr=learning_rate)
 scl = SupervisedContrastiveLoss()
 
 
-epochs = 1000#300
+epochs = 500#300
 # Loop through the data
 valid_f1 = 0.0
 margin = .3
@@ -343,7 +307,7 @@ decreasing_coeff = 0.95
 i = 0
 model_weights = []
 ghost_weights = None
-momentum_ema = 0.99
+momentum_ema = 0.9
 for epoch in range(epochs):
     start = time.time()
     model.train()
@@ -423,6 +387,13 @@ for epoch in range(epochs):
     print("TRAIN LOSS at Epoch %d: %.4f with ORTHO LOSS %.4f acc on TEST TARGET SET %.2f with training time %d"%(epoch, tot_loss/den, tot_ortho_loss/den, 100*f1_val, (end-start)))    
     sys.stdout.flush()
     
+
+
+update_bn(dataloader_source, dataloader_train_target, model)
+pred_valid, labels_valid = evaluation(model, dataloader_test_target, device)
+f1_val = f1_score(labels_valid, pred_valid, average="weighted")
+print("-> -> -> -> FINAL PERF AFTER BN STATISTICS UPDATE %f"%f1_val)
+
 
 #path = "prova.pth"
 #torch.save(swa_model.state_dict(), path)
