@@ -68,7 +68,7 @@ def update_bn(dataloader_source, dataloader_train_target, model):
     model.train()
     for x_batch_target, y_batch_target in dataloader_train_target:
         x_batch_source, y_batch_source = next(iter(dataloader_source))
-        
+
         x_batch_source = x_batch_source.to(device)
         y_batch_source = y_batch_source.to(device)
         
@@ -218,7 +218,7 @@ y_train_source = torch.tensor(source_label, dtype=torch.int64)
 
 
 
-w_size = 128 
+#w_size = 128 
 #resize = T.Resize((w_size, w_size), interpolation=T.InterpolationMode.BICUBIC)
 #
 #x_train_source = resize(x_train_source)
@@ -227,7 +227,7 @@ w_size = 128
 #dataset_source = TensorDataset(x_train_source, y_train_source)
 angle = [0, 90, 180, 270]
 transform_source = T.Compose([
-    T.Resize(w_size,antialias=True), 
+    #T.Resize(w_size,antialias=True), 
     T.RandomHorizontalFlip(),
     T.RandomVerticalFlip(),
     T.RandomApply([MyRotateTransform(angles=angle)], p=0.5)
