@@ -1,1 +1,1 @@
-python main.py TreeSatAI AERIAL MS 200 0
+python main.py TreeSatAI AERIAL MS 100 0
