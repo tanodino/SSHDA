@@ -352,16 +352,6 @@ for epoch in range(epochs):
 
         y_inv_labels = np.concatenate([y_batch_source.cpu().detach().numpy(), y_batch_target.cpu().detach().numpy()],axis=0)
 
-        '''
-        joint_embedding = torch.cat([inv_emb, emb_source_spec, emb_target_spec],dim=0)
-        dom_mix_labels = np.concatenate([np.zeros(inv_emb.shape[0]), np.ones(emb_source_spec.shape[0]), np.ones(emb_target_spec.shape[0])*2],axis=0)
-        
-        
-        #y_mix_labels = np.concatenate([y_inv_labels, np.ones(emb_source_spec.shape[0]), np.ones(emb_target_spec.shape[0]) ],axis=0)
-        y_mix_labels = np.concatenate([y_inv_labels, y_batch_source.cpu().detach().numpy(), y_batch_target.cpu().detach().numpy() ],axis=0)
-        
-        mixdl_loss_supContraLoss = sim_dist_specifc_loss_spc(joint_embedding, y_mix_labels, dom_mix_labels, scl, epoch)
-        '''
         mixdl_loss_supContraLoss = sim_dist_specifc_loss_spc(inv_emb, y_inv_labels, np.zeros_like(y_inv_labels), scl, epoch)
         
         norm_inv_emb = nn.functional.normalize(inv_emb)
@@ -370,9 +360,15 @@ for epoch in range(epochs):
         loss_ortho = torch.maximum( loss_ortho - margin, torch.tensor(0) )
 
         l2_reg = sum(p.pow(2).sum() for p in model.parameters())
-        #loss = loss_pred + loss_dom + mixdl_loss_supContraLoss + loss_ortho + 0.00001 * l2_reg
+        
+        ########## CONSISTENCY LOSS ##########
+
+        emb_unl_target, _, _, pred_unl_target = model.forward_source(x_batch_target_2, 1)
+        emb_unl_target_aug, _, _, pred_unl_target_aug = model.forward_source(x_batch_target_2_aug, 1)
+
+        ########################################@
+        
         loss = loss_pred + loss_dom + mixdl_loss_supContraLoss + 0.00001 * l2_reg + loss_ortho
-        #loss = loss_pred + mixdl_loss_supContraLoss + loss_ortho + 0.00001 * l2_reg
         
         loss.backward() # backward pass: backpropagate the prediction loss
         optimizer.step() # gradient descent: adjust the parameters by the gradients collected in the backward pass

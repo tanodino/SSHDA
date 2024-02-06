@@ -21,25 +21,6 @@ class ORDisModel(torch.nn.Module):
         target_model.conv1 = nn.Conv2d(input_channel_target, 64, kernel_size=7, stride=2, padding=3,bias=False)
         self.target = nn.Sequential(*list(target_model.children())[:-1])
 
-        '''
-        opt_model = resnet18(weights=None)
-        opt_model.conv1 = nn.Conv2d(input_channel_opt, 64, kernel_size=7, stride=2, padding=3,bias=False)
-        self.opt_inv = nn.Sequential(*list(opt_model.children())[:-1])
-
-        opt_model = resnet18(weights=None)
-        opt_model.conv1 = nn.Conv2d(input_channel_opt, 64, kernel_size=7, stride=2, padding=3,bias=False)
-        self.opt_spec = nn.Sequential(*list(opt_model.children())[:-1])
-
-
-        sar_model = resnet18(weights=None)
-        sar_model.conv1 = nn.Conv2d(input_channel_sar, 64, kernel_size=7, stride=2, padding=3,bias=False)
-        self.sar_inv = nn.Sequential(*list(sar_model.children())[:-1])
-
-        sar_model = resnet18(weights=None)
-        sar_model.conv1 = nn.Conv2d(input_channel_sar, 64, kernel_size=7, stride=2, padding=3,bias=False)
-        self.sar_spec = nn.Sequential(*list(sar_model.children())[:-1])
-        '''
-
         self.domain_cl = FC_Classifier_NoLazy(emb_dim, 256, 2)        
         self.task_cl = FC_Classifier_NoLazy(emb_dim, 256, num_classes)        
 
