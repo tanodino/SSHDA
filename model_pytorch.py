@@ -31,12 +31,8 @@ class ORDisModel(torch.nn.Module):
         #emb_spec = None
         if source == 0:
             emb = self.source(x).squeeze()
-            #emb_inv = self.opt_inv(x).squeeze()
-            #emb_spec = self.opt_spec(x).squeeze()
         else:
             emb = self.target(x).squeeze()
-            #emb_inv = self.sar_inv(x).squeeze()
-            #emb_spec = self.sar_spec(x).squeeze()
         nfeat = emb.shape[1]
         emb_inv = emb[:,0:nfeat//2]
         emb_spec = emb[:,nfeat//2::]
