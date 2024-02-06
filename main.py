@@ -77,15 +77,13 @@ class MyRotateTransform():
 
 
 class MyDataset_Unl(Dataset):
-    def __init__(self, data, transform=None):
+    def __init__(self, data, transform):
         self.data = data
         self.transform = transform
         
     def __getitem__(self, index):
-        x = self.data[index]
-        x_transform = self.data[index]
-        
-        x_transform = self.transform(x_transform)
+        x = self.data[index]        
+        x_transform = self.transform(self.data[index])
         
         return x, x_transform
     
@@ -227,7 +225,6 @@ train_target_data, train_target_label = shuffle(train_target_data, train_target_
 x_train_source = torch.tensor(source_data, dtype=torch.float32)
 y_train_source = torch.tensor(source_label, dtype=torch.int64)
 
-
 #dataset_source = TensorDataset(x_train_source, y_train_source)
 angle = [0, 90, 180, 270]
 transform_source = T.Compose([
@@ -251,6 +248,19 @@ transform_target = T.Compose([
 #dataset_train_target = TensorDataset(x_train_target, y_train_target)
 dataset_train_target = MyDataset(x_train_target, y_train_target, transform=transform_target)
 dataloader_train_target = DataLoader(dataset_train_target, shuffle=True, batch_size=train_batch_size)
+
+#DATALOADER TARGET UNLABELLED
+x_train_target_unl = torch.tensor(test_target_data_unl, dtype=torch.float32)
+
+transform_target_unl = T.Compose([
+    T.RandomHorizontalFlip(),
+    T.RandomVerticalFlip(),
+    T.RandomApply([MyRotateTransform(angles=angle)], p=0.5),
+    T.RandomApply([T.ColorJitter()], p=0.5)
+    ])
+
+dataset_train_target_unl = MyDataset_Unl(x_train_target_unl, transform_target_unl)
+dataloader_train_target_unl = DataLoader(dataset_train_target_unl, shuffle=True, batch_size=train_batch_size)
 
 #DATALOADER TARGET TEST
 x_test_target = torch.tensor(test_target_data, dtype=torch.float32)
@@ -319,6 +329,8 @@ for epoch in range(epochs):
         #print("ciao")
         optimizer.zero_grad()
         x_batch_target, y_batch_target = next(iter(dataloader_train_target))
+
+        x_batch_target_2, x_batch_target_2_aug = next(iter(dataloader_train_target_unl))
 
         x_batch_source = x_batch_source.to(device)
         y_batch_source = y_batch_source.to(device)
