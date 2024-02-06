@@ -212,7 +212,7 @@ sys.stdout.flush()
 n_classes = len(np.unique(source_label))
 
 
-train_batch_size = 384#512#1024#512
+train_batch_size = 512#1024#512
 
 source_data, source_label = shuffle(source_data, source_label)
 train_target_data, train_target_label = shuffle(train_target_data, train_target_label)
@@ -375,13 +375,8 @@ for epoch in range(epochs):
         
         ''' FIXMATCH '''
         pseudo_labels = torch.softmax(pred_unl_target,dim=1).cpu().detach().numpy()
-        #print("pseudo_labels.shape ",pseudo_labels.shape)
         max_value = np.amax(pseudo_labels, axis=1)
-        #print("max_value.shape ",max_value.shape)
         ind_var = (max_value > th_pseudo_label).astype("int")
-        #print("ind_var.shape ",ind_var.shape)
-        #print(ind_var.shape)
-        #ind_var = np.expand_dims(ind_var, -1)
         ind_var = torch.tensor(ind_var).to(device)
         pseudo_labels_tensor = torch.tensor(np.argmax(pseudo_labels,axis=1), dtype=torch.int64).to(device)
         #print("pseudo_labels_tensor.shape ",pseudo_labels_tensor.shape)
@@ -408,6 +403,7 @@ for epoch in range(epochs):
         tot_ortho_loss+=loss_ortho.cpu().detach().numpy()
         tot_fixmatch_loss = loss_consistency.cpu().detach().numpy()
         den+=1.
+        torch.cuda.empty_cache()
 
     if int(tot_ortho_loss/den * 1000) == 0:
         previous_margin = margin
