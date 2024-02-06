@@ -212,7 +212,7 @@ sys.stdout.flush()
 n_classes = len(np.unique(source_label))
 
 
-train_batch_size = 512#1024#512
+train_batch_size = 384#512#1024#512
 
 source_data, source_label = shuffle(source_data, source_label)
 train_target_data, train_target_label = shuffle(train_target_data, train_target_label)
