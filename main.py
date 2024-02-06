@@ -365,10 +365,17 @@ for epoch in range(epochs):
 
         emb_unl_target, _, _, pred_unl_target = model.forward_source(x_batch_target_2, 1)
         emb_unl_target_aug, _, _, pred_unl_target_aug = model.forward_source(x_batch_target_2_aug, 1)
+        loss_consistency_pred = torch.mean( torch.sum( torch.square(pred_unl_target - pred_unl_target_aug), dim=1) )
+
+        norm_emb_unl_target = nn.functional.normalize(emb_unl_target)
+        norm_emb_unl_target_aug = nn.functional.normalize(emb_unl_target_aug)
+        loss_consistency_emb = torch.mean( 1 - torch.sum(norm_emb_unl_target * norm_emb_unl_target_aug, dim=1) )
+
+        loss_consistency = loss_consistency_pred + loss_consistency_emb
 
         ########################################@
         
-        loss = loss_pred + loss_dom + mixdl_loss_supContraLoss + 0.00001 * l2_reg + loss_ortho
+        loss = loss_pred + loss_dom + mixdl_loss_supContraLoss + 0.00001 * l2_reg + loss_ortho + loss_consistency
         
         loss.backward() # backward pass: backpropagate the prediction loss
         optimizer.step() # gradient descent: adjust the parameters by the gradients collected in the backward pass
