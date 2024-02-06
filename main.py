@@ -36,16 +36,6 @@ def modify_weights(model, ghost_weights, alpha):
         for k in state_dict:
             current_weights_npy[k] = alpha * ghost_weights[k] + (1-alpha) * current_weights_npy[k]
     
-    '''
-    if ghost_weights is None:
-        for k in state_dict:
-            current_weights_npy[k] = state_dict[k].cpu().detach().numpy()
-    else:
-        for k in state_dict:
-            temp_weights = state_dict[k].cpu().detach().numpy()
-            current_weights_npy[k] = alpha * ghost_weights[k] + (1-alpha) * temp_weights
-    '''
-    
     for k in state_dict:
         current_weights[k] = torch.tensor( current_weights_npy[k] )
     
@@ -58,8 +48,6 @@ def retrieveModelWeights(model):
     for k in state_dict:
         to_save[k] = state_dict[k].cpu().detach().numpy()
     return to_save
-
-
 
 
 
@@ -86,6 +74,24 @@ class MyRotateTransform():
     def __call__(self, x):
         angle = random.choice(self.angles)
         return TF.rotate(x, angle)
+
+
+class MyDataset_Unl(Dataset):
+    def __init__(self, data, transform=None):
+        self.data = data
+        self.transform = transform
+        
+    def __getitem__(self, index):
+        x = self.data[index]
+        x_transform = self.data[index]
+        
+        x_transform = self.transform(x_transform)
+        
+        return x, x_transform
+    
+    def __len__(self):
+        return len(self.data)
+
 
 
 class MyDataset(Dataset):
@@ -181,11 +187,16 @@ sys.stdout.flush()
 train_target_idx = np.load("%s/%s_%s_%s_train_idx.npy"%(dir, target_prefix, nsplit, nsamples))
 test_target_idx = np.setdiff1d(np.arange(target_data.shape[0]), train_target_idx)
 
+
 train_target_data = target_data[train_target_idx]
 train_target_label = target_label[train_target_idx]
 
 test_target_data = target_data[test_target_idx]
 test_target_label = target_label[test_target_idx]
+
+test_target_data_unl = target_data[test_target_idx]
+
+
 
 print("TRAININg ID SELECTED")
 print("train_target_data ",train_target_data.shape)
@@ -217,17 +228,9 @@ x_train_source = torch.tensor(source_data, dtype=torch.float32)
 y_train_source = torch.tensor(source_label, dtype=torch.int64)
 
 
-
-#w_size = 128 
-#resize = T.Resize((w_size, w_size), interpolation=T.InterpolationMode.BICUBIC)
-#
-#x_train_source = resize(x_train_source)
-#print("\tAFTER RESIZING ",x_train_source.shape)
-
 #dataset_source = TensorDataset(x_train_source, y_train_source)
 angle = [0, 90, 180, 270]
 transform_source = T.Compose([
-    #T.Resize(w_size,antialias=True), 
     T.RandomHorizontalFlip(),
     T.RandomVerticalFlip(),
     T.RandomApply([MyRotateTransform(angles=angle)], p=0.5)
