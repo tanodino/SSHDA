@@ -305,6 +305,7 @@ model = model.to(device)
 
 learning_rate = 0.0001
 loss_fn = nn.CrossEntropyLoss()
+loss_fn_noReduction = nn.CrossEntropyLoss(reduction='none')
 optimizer = torch.optim.AdamW(params=model.parameters(), lr=learning_rate)
 #optimizer = torchcontrib.optim.SWA(base_optimizer)
 scl = SupervisedContrastiveLoss()
@@ -319,11 +320,13 @@ i = 0
 model_weights = []
 ghost_weights = None
 momentum_ema = 0.9
+th_pseudo_label = .95
 for epoch in range(epochs):
     start = time.time()
     model.train()
     tot_loss = 0.0
     tot_ortho_loss = 0.0
+    tot_fixmatch_loss = 0.0
     den = 0
     for x_batch_source, y_batch_source in dataloader_source:
         #print("ciao")
@@ -370,7 +373,12 @@ for epoch in range(epochs):
         emb_unl_target_aug, _, _, pred_unl_target_aug = model.forward_source(x_batch_target_unl_aug, 1)
         loss_consistency_pred = torch.mean( torch.sum( torch.square(pred_unl_target - pred_unl_target_aug), dim=1) )
         
-
+        ''' FIXMATCH '''
+        pseudo_labels = torch.softmax(pred_unl_target,dim=1).cpu().detach().numpy()
+        ind_var = (pseudo_labels > th_pseudo_label).astype("int")
+        pseudo_labels_tensor = torch.tensor(np.argmax(pseudo_labels,axis=1), dtype=torch.int64).to(device)
+        loss_fix_match = torch.sum( ind_var * loss_fn_noReduction( pred_unl_target_aug,  pseudo_labels_tensor ) )
+        loss_fix_match = loss_fix_match / ( np.sum(ind_var)+ np.finfo(np.float32).eps )
         '''
         norm_emb_unl_target = nn.functional.normalize(emb_unl_target)
         norm_emb_unl_target_aug = nn.functional.normalize(emb_unl_target_aug)
@@ -378,7 +386,7 @@ for epoch in range(epochs):
         '''
 
         #loss_consistency = loss_consistency_pred + loss_consistency_emb
-        loss_consistency = loss_consistency_pred
+        loss_consistency = loss_fix_match #loss_consistency_pred
         ########################################
         
         loss = loss_pred + loss_dom + mixdl_loss_supContraLoss + 0.00001 * l2_reg + loss_ortho + loss_consistency
@@ -388,6 +396,7 @@ for epoch in range(epochs):
         
         tot_loss+= loss.cpu().detach().numpy()
         tot_ortho_loss+=loss_ortho.cpu().detach().numpy()
+        tot_fixmatch_loss = loss_consistency.cpu().detach().numpy()
         den+=1.
 
     if int(tot_ortho_loss/den * 1000) == 0:
@@ -406,7 +415,7 @@ for epoch in range(epochs):
     #ema_pred_valid, ema_labels_valid = evaluation(ema_model, dataloader_test_target, device, source_prefix)
     #f1_val_ema = f1_score(ema_labels_valid, ema_pred_valid, average="weighted")
     #print("TRAIN LOSS at Epoch %d: %.4f with acc on TEST TARGET SET %.2f with (EMA) acc on TETS TARGET SET %.2f with training time %d"%(epoch, tot_loss/den, 100*f1_val,100*f1_val_ema, (end-start)))    
-    print("TRAIN LOSS at Epoch %d: %.4f with ORTHO LOSS %.4f acc on TEST TARGET SET %.2f with training time %d"%(epoch, tot_loss/den, tot_ortho_loss/den, 100*f1_val, (end-start)))    
+    print("TRAIN LOSS at Epoch %d: %.4f with ORTHO LOSS %.4f with CONSISTENCY LOSS %.4f acc on TEST TARGET SET %.2f with training time %d"%(epoch, tot_loss/den, tot_ortho_loss/den, tot_fixmatch_loss/den, 100*f1_val, (end-start)))    
     sys.stdout.flush()
     
 
