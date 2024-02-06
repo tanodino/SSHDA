@@ -375,13 +375,20 @@ for epoch in range(epochs):
         
         ''' FIXMATCH '''
         pseudo_labels = torch.softmax(pred_unl_target,dim=1).cpu().detach().numpy()
+        print("pseudo_labels.shape ",pseudo_labels.shape)
         max_value = np.amax(pseudo_labels, axis=1)
+        print("max_value.shape ",max_value.shape)
         ind_var = (max_value > th_pseudo_label).astype("int")
+        print("ind_var.shape ",ind_var.shape)
         #print(ind_var.shape)
         #ind_var = np.expand_dims(ind_var, -1)
+        ind_var = torch.tensor(ind_var).to(device)
         pseudo_labels_tensor = torch.tensor(np.argmax(pseudo_labels,axis=1), dtype=torch.int64).to(device)
-        loss_fix_match = torch.sum( torch.tensor(ind_var).to(device) * loss_fn_noReduction( pred_unl_target_aug,  pseudo_labels_tensor ) )
-        loss_fix_match = loss_fix_match / ( np.sum(ind_var)+ np.finfo(np.float32).eps )
+        print("pseudo_labels_tensor.shape ",pseudo_labels_tensor.shape)
+        loss_fix_match = torch.sum( ind_var * loss_fn_noReduction( pred_unl_target_aug,  pseudo_labels_tensor ) )
+        print("loss_fix_match",loss_fix_match)
+        loss_fix_match = loss_fix_match / ( torch.sum(ind_var) + torch.finfo(torch.float32).eps )
+        print("loss_fix_match",loss_fix_match)
         '''
         norm_emb_unl_target = nn.functional.normalize(emb_unl_target)
         norm_emb_unl_target_aug = nn.functional.normalize(emb_unl_target_aug)
