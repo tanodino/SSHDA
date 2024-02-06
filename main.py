@@ -330,13 +330,16 @@ for epoch in range(epochs):
         optimizer.zero_grad()
         x_batch_target, y_batch_target = next(iter(dataloader_train_target))
 
-        x_batch_target_2, x_batch_target_2_aug = next(iter(dataloader_train_target_unl))
+        x_batch_target_unl, x_batch_target_unl_aug = next(iter(dataloader_train_target_unl))
 
         x_batch_source = x_batch_source.to(device)
         y_batch_source = y_batch_source.to(device)
         
         x_batch_target = x_batch_target.to(device)
         y_batch_target = y_batch_target.to(device)
+
+        x_batch_target_unl = x_batch_target_unl.to(device)
+        x_batch_target_unl_aug = x_batch_target_unl_aug.to(device)
 
         emb_source_inv, emb_source_spec, dom_source_cl, task_source_cl, emb_target_inv, emb_target_spec, dom_target_cl, task_target_cl = model([x_batch_source, x_batch_target])
         pred_task = torch.cat([task_source_cl, task_target_cl],dim=0)
@@ -363,8 +366,8 @@ for epoch in range(epochs):
         
         ########## CONSISTENCY LOSS ##########
 
-        emb_unl_target, _, _, pred_unl_target = model.forward_source(x_batch_target_2, 1)
-        emb_unl_target_aug, _, _, pred_unl_target_aug = model.forward_source(x_batch_target_2_aug, 1)
+        emb_unl_target, _, _, pred_unl_target = model.forward_source(x_batch_target_unl, 1)
+        emb_unl_target_aug, _, _, pred_unl_target_aug = model.forward_source(x_batch_target_unl_aug, 1)
         loss_consistency_pred = torch.mean( torch.sum( torch.square(pred_unl_target - pred_unl_target_aug), dim=1) )
 
         norm_emb_unl_target = nn.functional.normalize(emb_unl_target)
@@ -373,7 +376,7 @@ for epoch in range(epochs):
 
         loss_consistency = loss_consistency_pred + loss_consistency_emb
 
-        ########################################@
+        ########################################
         
         loss = loss_pred + loss_dom + mixdl_loss_supContraLoss + 0.00001 * l2_reg + loss_ortho + loss_consistency
         
