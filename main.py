@@ -374,7 +374,7 @@ for epoch in range(epochs):
         #emb_unl_target_aug, _, _, pred_unl_target_aug = model.forward_source(x_batch_target_unl_aug, 1)
         _, _, _, pred_unl_target_aug = model.forward_source(x_batch_target_unl_aug, 1)
         pred_unl_target = torch.softmax(pred_unl_target,dim=1).detach()
-        emb_unl_target_aug = torch.softmax(emb_unl_target_aug,dim=1)
+        pred_unl_target_aug = torch.softmax(pred_unl_target_aug,dim=1)
         
         loss_consistency_pred = torch.mean( torch.sum( torch.square(pred_unl_target - pred_unl_target_aug), dim=1) )
         
