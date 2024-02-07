@@ -403,7 +403,12 @@ for epoch in range(epochs):
         tot_ortho_loss+=loss_ortho.cpu().detach().numpy()
         tot_fixmatch_loss = loss_consistency.cpu().detach().numpy()
         den+=1.
-        torch.cuda.empty_cache()
+
+        if i % 20 == 0:
+            torch.cuda.empty_cache()
+        
+        i+=1
+
 
     if int(tot_ortho_loss/den * 1000) == 0:
         previous_margin = margin
