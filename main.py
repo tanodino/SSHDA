@@ -371,9 +371,13 @@ for epoch in range(epochs):
 
         emb_unl_target, _, _, pred_unl_target = model.forward_source(x_batch_target_unl, 1)
         emb_unl_target_aug, _, _, pred_unl_target_aug = model.forward_source(x_batch_target_unl_aug, 1)
-        #loss_consistency_pred = torch.mean( torch.sum( torch.square(pred_unl_target - pred_unl_target_aug), dim=1) )
+        pred_unl_target = torch.softmax(pred_unl_target,dim=1).detach()
+        emb_unl_target_aug = torch.softmax(emb_unl_target_aug,dim=1)
+        
+        loss_consistency_pred = torch.mean( torch.sum( torch.square(pred_unl_target - pred_unl_target_aug), dim=1) )
         
         ''' FIXMATCH '''
+        '''
         pseudo_labels = torch.softmax(pred_unl_target,dim=1).cpu().detach().numpy()
         max_value = np.amax(pseudo_labels, axis=1)
         ind_var = (max_value > th_pseudo_label).astype("int")
@@ -388,10 +392,10 @@ for epoch in range(epochs):
         norm_emb_unl_target = nn.functional.normalize(emb_unl_target)
         norm_emb_unl_target_aug = nn.functional.normalize(emb_unl_target_aug)
         loss_consistency_emb = torch.mean( 1 - torch.sum(norm_emb_unl_target * norm_emb_unl_target_aug, dim=1) )
-        '''
+        
 
-        #loss_consistency = loss_consistency_pred + loss_consistency_emb
-        loss_consistency = loss_fix_match #loss_consistency_pred
+        loss_consistency = loss_consistency_pred #+ loss_consistency_emb
+        #loss_consistency = loss_fix_match #loss_consistency_pred
         ########################################
         
         loss = loss_pred + loss_dom + mixdl_loss_supContraLoss + 0.00001 * l2_reg + loss_ortho + loss_consistency
@@ -404,7 +408,7 @@ for epoch in range(epochs):
         tot_fixmatch_loss = loss_consistency.cpu().detach().numpy()
         den+=1.
 
-        torch.cuda.empty_cache()
+        #torch.cuda.empty_cache()
         
     if int(tot_ortho_loss/den * 1000) == 0:
         previous_margin = margin
