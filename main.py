@@ -319,7 +319,7 @@ decreasing_coeff = 0.95
 i = 0
 model_weights = []
 ghost_weights = None
-momentum_ema = .9
+momentum_ema = .75
 th_pseudo_label = .95
 for epoch in range(epochs):
     start = time.time()
@@ -362,9 +362,9 @@ for epoch in range(epochs):
         
         norm_inv_emb = nn.functional.normalize(inv_emb)
         norm_spec_emb = nn.functional.normalize(spec_emb)
-        loss_ortho = torch.mean( torch.sum( norm_inv_emb * norm_spec_emb, dim=1) )
-        loss_ortho = torch.maximum( loss_ortho - margin, torch.tensor(0) )
-
+        loss_ortho = torch.sum( norm_inv_emb * norm_spec_emb, dim=1)
+        #loss_ortho = torch.maximum( loss_ortho - margin, torch.tensor(0) )
+        loss_ortho = torch.mean(loss_ortho)
         l2_reg = sum(p.pow(2).sum() for p in model.parameters())
         
         ########## CONSISTENCY LOSS ##########
