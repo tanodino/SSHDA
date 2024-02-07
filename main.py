@@ -404,9 +404,13 @@ for epoch in range(epochs):
         tot_fixmatch_loss = loss_consistency.cpu().detach().numpy()
         den+=1.
 
-        if i % 20 == 0:
-            torch.cuda.empty_cache()
+        #if i % 20 == 0:
+        #    torch.cuda.empty_cache()
         
+        x_batch_target_unl = None
+        x_batch_target_unl_aug = None
+        x_batch_source = None
+        x_batch_target = None
         i+=1
 
 
