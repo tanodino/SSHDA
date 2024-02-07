@@ -319,7 +319,7 @@ decreasing_coeff = 0.95
 i = 0
 model_weights = []
 ghost_weights = None
-momentum_ema = .5#0.9
+momentum_ema = .9
 th_pseudo_label = .95
 for epoch in range(epochs):
     start = time.time()
