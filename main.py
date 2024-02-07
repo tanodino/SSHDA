@@ -314,12 +314,12 @@ scl = SupervisedContrastiveLoss()
 epochs = 500#300
 # Loop through the data
 valid_f1 = 0.0
-margin = .3
+margin = .1#.3
 decreasing_coeff = 0.95
 i = 0
 model_weights = []
 ghost_weights = None
-momentum_ema = 0.9
+momentum_ema = .5#0.9
 th_pseudo_label = .95
 for epoch in range(epochs):
     start = time.time()
@@ -412,10 +412,10 @@ for epoch in range(epochs):
 
         #torch.cuda.empty_cache()
         
-    if int(tot_ortho_loss/den * 1000) == 0:
-        previous_margin = margin
-        margin = margin * decreasing_coeff
-        print("\T\T\T MARGIN decreasing from %f to %f"%(previous_margin,margin))
+    #if int(tot_ortho_loss/den * 1000) == 0:
+    #    previous_margin = margin
+    #    margin = margin * decreasing_coeff
+    #    print("\T\T\T MARGIN decreasing from %f to %f"%(previous_margin,margin))
 
     #MANUAL IMPLEMENTAITON OF THE EMA OPERATION
     if epoch >= 50:
