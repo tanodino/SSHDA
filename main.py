@@ -376,7 +376,7 @@ for epoch in range(epochs):
         pred_unl_target = torch.softmax(pred_unl_target,dim=1).detach()
         pred_unl_target_aug = torch.softmax(pred_unl_target_aug,dim=1)
         
-        loss_consistency_pred = torch.mean( torch.sum( torch.square(pred_unl_target - pred_unl_target_aug), dim=1) )
+        loss_consistency_pred = torch.mean( torch.sum( torch.abs(pred_unl_target - pred_unl_target_aug), dim=1) )
         
         ''' FIXMATCH '''
         '''
