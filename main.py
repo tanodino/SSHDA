@@ -358,7 +358,7 @@ for epoch in range(epochs):
         l2_reg = sum(p.pow(2).sum() for p in model.parameters())
         
         ########## CONSISTENCY LOSS ##########
-
+        '''
         #emb_unl_target, _, _, pred_unl_target = model.forward_source(x_batch_target_unl, 1)
         _, _, _, pred_unl_target = model.forward_source(x_batch_target_unl, 1)
         #emb_unl_target_aug, _, _, pred_unl_target_aug = model.forward_source(x_batch_target_unl_aug, 1)
@@ -367,7 +367,7 @@ for epoch in range(epochs):
         pred_unl_target_aug = torch.softmax(pred_unl_target_aug,dim=1)
         
         loss_consistency_pred = torch.mean( torch.sum( torch.abs(pred_unl_target - pred_unl_target_aug), dim=1) )
-        
+        '''
         ''' FIXMATCH '''
         '''
         pseudo_labels = torch.softmax(pred_unl_target,dim=1).cpu().detach().numpy()
@@ -386,7 +386,7 @@ for epoch in range(epochs):
         #loss_consistency_emb = torch.mean( 1 - torch.sum(norm_emb_unl_target * norm_emb_unl_target_aug, dim=1) )
         
 
-        loss_consistency = loss_consistency_pred #+ loss_consistency_emb
+        #loss_consistency = loss_consistency_pred #+ loss_consistency_emb
         #loss_consistency = loss_fix_match #loss_consistency_pred
         ########################################
         
