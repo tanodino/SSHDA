@@ -357,6 +357,17 @@ for epoch in range(epochs):
         loss_ortho = torch.mean(loss_ortho)
         l2_reg = sum(p.pow(2).sum() for p in model.parameters())
         
+        ########### PSEUDO LABELS ###########################
+        _, _, _, pred_unl_target = model.forward_source(x_batch_target_unl, 1)
+        pred_unl_target = torch.softmax(pred_unl_target, dim=1)
+        entropy = torch.distributions.Categorical(pred_unl_target).entropy()
+        norm_inv_entropy = 1.-torch.div(entropy, torch.log(n_classes) )
+        
+        ind_var = (norm_inv_entropy.cpu().detach().numpy() > th_pseudo_label).astype("int")
+        ind_var = torch.tensor(ind_var).to(device)
+        entro_regularizer = torch.mean(ind_var * norm_inv_entropy)
+
+
         ########## CONSISTENCY LOSS ##########
         '''
         #emb_unl_target, _, _, pred_unl_target = model.forward_source(x_batch_target_unl, 1)
