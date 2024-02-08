@@ -368,7 +368,10 @@ for epoch in range(epochs):
         
         ind_var = (norm_inv_entropy.cpu().detach().numpy() > th_pseudo_label).astype("int")
         ind_var = torch.tensor(ind_var).to(device)
-        entro_regularizer = torch.mean(ind_var * norm_inv_entropy)
+        #entro_regularizer = torch.mean(ind_var * norm_inv_entropy)
+        num_entro_reg = torch.sum(ind_var * norm_inv_entropy)
+        entro_regularizer = torch.div(num_entro_reg, torch.sum(ind_var)+torch.finfo(torch.float32).eps)
+        #entro_regularizer = torch.mean(ind_var * norm_inv_entropy)
 
 
         ########## CONSISTENCY LOSS ##########
