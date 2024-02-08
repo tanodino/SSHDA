@@ -280,16 +280,6 @@ model._modules["fc"]  = nn.Linear(in_features=512, out_features=len(np.unique(tr
 #The forward method of the ORDisModel class takes as input a pair of optical and sar data
 #more precisely, we adopt a training strategy in which we have a balanced number of optical and sar samples for each batch
 model = None
-opt_dim = None
-sar_dim = None
-'''
-if source_prefix == "MS":
-    opt_dim = source_data.shape[1]
-    sar_dim = target_data.shape[1]
-else:
-    opt_dim = target_data.shape[1]
-    sar_dim = source_data.shape[1]
-'''
 
 print("source_data.shape[1] ",source_data.shape[1])
 print("target_data.shape[1] ",target_data.shape[1])
@@ -303,7 +293,7 @@ model = model.to(device)
 
 
 
-learning_rate = 0.0005
+learning_rate = 0.0001
 loss_fn = nn.CrossEntropyLoss()
 loss_fn_noReduction = nn.CrossEntropyLoss(reduction='none')
 optimizer = torch.optim.Adam(params=model.parameters(), lr=learning_rate)
@@ -314,7 +304,7 @@ scl = SupervisedContrastiveLoss()
 epochs = 500#300
 # Loop through the data
 valid_f1 = 0.0
-margin = .1#.3
+margin = .3
 decreasing_coeff = 0.95
 i = 0
 model_weights = []
@@ -400,7 +390,8 @@ for epoch in range(epochs):
         #loss_consistency = loss_fix_match #loss_consistency_pred
         ########################################
         
-        loss = loss_pred + loss_dom + mixdl_loss_supContraLoss + 0.00001 * l2_reg + loss_ortho #+ loss_consistency
+        #loss = loss_pred + loss_dom + mixdl_loss_supContraLoss + 0.00001 * l2_reg + loss_ortho #+ loss_consistency
+        loss = loss_pred + loss_dom + 2*mixdl_loss_supContraLoss + loss_ortho #+ loss_consistency
         
         loss.backward() # backward pass: backpropagate the prediction loss
         optimizer.step() # gradient descent: adjust the parameters by the gradients collected in the backward pass
@@ -412,10 +403,10 @@ for epoch in range(epochs):
 
         #torch.cuda.empty_cache()
         
-    #if int(tot_ortho_loss/den * 1000) == 0:
-    #    previous_margin = margin
-    #    margin = margin * decreasing_coeff
-    #    print("\T\T\T MARGIN decreasing from %f to %f"%(previous_margin,margin))
+    if int(tot_ortho_loss/den * 1000) == 0:
+        previous_margin = margin
+        margin = margin * decreasing_coeff
+        print("\T\T\T MARGIN decreasing from %f to %f"%(previous_margin,margin))
 
     #MANUAL IMPLEMENTAITON OF THE EMA OPERATION
     if epoch >= 50:

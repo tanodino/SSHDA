@@ -130,7 +130,6 @@ class SupervisedContrastiveLoss(nn.Module):
         cardinality_per_samples = torch.sum(mask_combined, dim=1)
 
         log_prob = -torch.log(exp_dot_tempered / (torch.sum(exp_dot_tempered * mask_anchor_out, dim=1, keepdim=True)))
-        #print(log_prob)
         #### FILTER OUT POSSIBLE NaN PROBLEMS #### 
         mdf = cardinality_per_samples!=0
         cardinality_per_samples = cardinality_per_samples[mdf]
@@ -139,10 +138,7 @@ class SupervisedContrastiveLoss(nn.Module):
         #### #### #### #### #### #### #### #### #### 
 
         supervised_contrastive_loss_per_sample = torch.sum(log_prob * mask_combined, dim=1) / cardinality_per_samples
-        #print(supervised_contrastive_loss_per_sample)
         supervised_contrastive_loss = torch.mean(supervised_contrastive_loss_per_sample)
-        #print(supervised_contrastive_loss)
-        #print("============")
         return supervised_contrastive_loss
 
 
