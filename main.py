@@ -398,7 +398,7 @@ for epoch in range(epochs):
         
         tot_loss+= loss.cpu().detach().numpy()
         tot_ortho_loss+=loss_ortho.cpu().detach().numpy()
-        tot_fixmatch_loss = loss_consistency.cpu().detach().numpy()
+        tot_fixmatch_loss = 0#loss_consistency.cpu().detach().numpy()
         den+=1.
 
         #torch.cuda.empty_cache()
