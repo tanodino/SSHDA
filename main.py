@@ -312,7 +312,7 @@ ghost_weights = None
 momentum_ema = .9
 th_pseudo_label = .95
 
-den_entro = torch.log(torch.tensor(n_classes, dtype=torch.float32) )
+den_entro = torch.log2(torch.tensor(n_classes, dtype=torch.float32) )
 
 for epoch in range(epochs):
     start = time.time()
@@ -363,8 +363,8 @@ for epoch in range(epochs):
         ########### PSEUDO LABELS ###########################
         _, _, _, pred_unl_target = model.forward_source(x_batch_target_unl, 1)
         pred_unl_target = torch.softmax(pred_unl_target, dim=1)
-        entropy = torch.distributions.Categorical(pred_unl_target).entropy()
-        norm_inv_entropy = 1.-torch.div(entropy, den_entro )
+        entro = - torch.sum( pred_unl_target * torch.log2(pred_unl_target), dim=1)
+        norm_inv_entropy = 1.-torch.div(entro, den_entro )
         
         ind_var = (norm_inv_entropy.cpu().detach().numpy() > th_pseudo_label).astype("int")
         ind_var = torch.tensor(ind_var).to(device)
