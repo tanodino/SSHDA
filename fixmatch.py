@@ -17,6 +17,7 @@ from sklearn.model_selection import train_test_split
 from functions import MyRotateTransform, MyDataset_Unl, MyDataset
 import torchvision.transforms as T 
 import torch.nn.functional as F
+import torchvision.transforms.functional as TF
 
 
 def evaluation(model, dataloader, device):

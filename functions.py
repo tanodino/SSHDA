@@ -3,6 +3,7 @@ import random
 from torch.utils.data import Dataset, DataLoader
 import torch
 
+
 class MyRotateTransform():
     def __init__(self, angles: Sequence[int]):
         self.angles = angles
