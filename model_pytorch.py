@@ -26,9 +26,8 @@ class ORDisModel(torch.nn.Module):
 
     
     def forward_source(self, x, source):
-        self.source.train()
-        self.target.train()
-
+        #self.source.train()
+        #self.target.train()
         emb = None
         #emb_inv = None
         #emb_spec = None
