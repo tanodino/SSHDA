@@ -383,8 +383,8 @@ for epoch in range(epochs):
         norm_unl_target_spec = F.normalize(unl_target_spec)
         norm_unl_target_aug_inv = F.normalize(unl_target_aug_inv)
         norm_unl_target_aug_spec = F.normalize(unl_target_aug_spec)
-        unlabeled_loss_ortho_orig = torch.mean( torch.sum( norm_unl_target_inv * norm_unl_target_spec, dim=1) )
-        unlabeled_loss_ortho_aug = torch.mean( torch.sum( norm_unl_target_aug_inv * norm_unl_target_aug_spec, dim=1) )
+        unlabeled_loss_ortho_orig = torch.mean( torch.sum( norm_unl_target_inv * norm_unl_target_spec, dim=1)  * mask )
+        unlabeled_loss_ortho_aug = torch.mean( torch.sum( norm_unl_target_aug_inv * norm_unl_target_aug_spec, dim=1)  * mask )
         unlabeled_loss_ortho = (unlabeled_loss_ortho_orig + unlabeled_loss_ortho_aug) / 2
         ##### FIXMATCH ###############
 
