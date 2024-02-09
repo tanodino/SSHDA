@@ -361,6 +361,7 @@ for epoch in range(epochs):
         l2_reg = sum(p.pow(2).sum() for p in model.parameters())
         
         ########### PSEUDO LABELS ###########################
+        '''
         _, _, _, pred_unl_target = model.forward_source(x_batch_target_unl, 1)
         pred_unl_target = torch.softmax(pred_unl_target, dim=1)
         entro = - torch.sum( pred_unl_target * torch.log2(pred_unl_target), dim=1)
@@ -372,7 +373,7 @@ for epoch in range(epochs):
         num_entro_reg = torch.sum(ind_var * norm_inv_entropy)
         entro_regularizer = torch.div(num_entro_reg, torch.sum(ind_var)+torch.finfo(torch.float32).eps)
         #entro_regularizer = torch.mean(ind_var * norm_inv_entropy)
-
+        '''
 
         ########## CONSISTENCY LOSS ##########
         '''
@@ -408,14 +409,14 @@ for epoch in range(epochs):
         ########################################
         
         #loss = loss_pred + loss_dom + mixdl_loss_supContraLoss + 0.00001 * l2_reg + loss_ortho #+ loss_consistency
-        loss = loss_pred + loss_dom + 2*mixdl_loss_supContraLoss + loss_ortho + entro_regularizer#+ loss_consistency
+        loss = loss_pred + loss_dom + 2*mixdl_loss_supContraLoss + loss_ortho #+ entro_regularizer#+ loss_consistency
         
         loss.backward() # backward pass: backpropagate the prediction loss
         optimizer.step() # gradient descent: adjust the parameters by the gradients collected in the backward pass
         
         tot_loss+= loss.cpu().detach().numpy()
         tot_ortho_loss+=loss_ortho.cpu().detach().numpy()
-        tot_fixmatch_loss = entro_regularizer#loss_consistency.cpu().detach().numpy()
+        tot_fixmatch_loss = 0#entro_regularizer#loss_consistency.cpu().detach().numpy()
         den+=1.
 
         #torch.cuda.empty_cache()
