@@ -20,9 +20,11 @@ from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as T 
 import torchvision.transforms.functional as TF
 import random
-from typing import Sequence
 import torchcontrib
 from collections import OrderedDict
+from functions import MyRotateTransform, MyDataset_Unl, MyDataset
+
+
 
 def modify_weights(model, ghost_weights, alpha):
     current_weights = OrderedDict()
@@ -64,54 +66,6 @@ def update_bn(dataloader_source, dataloader_train_target, model):
         y_batch_target = y_batch_target.to(device)
 
         model([x_batch_source, x_batch_target])
-
-
-
-class MyRotateTransform():
-    def __init__(self, angles: Sequence[int]):
-        self.angles = angles
-
-    def __call__(self, x):
-        angle = random.choice(self.angles)
-        return TF.rotate(x, angle)
-
-
-class MyDataset_Unl(Dataset):
-    def __init__(self, data, transform):
-        self.data = data
-        self.transform = transform
-        
-    def __getitem__(self, index):
-        x = self.data[index]        
-        x_transform = self.transform(self.data[index])
-        
-        return x, x_transform
-    
-    def __len__(self):
-        return len(self.data)
-
-
-
-class MyDataset(Dataset):
-    def __init__(self, data, targets, transform=None):
-        self.data = data
-        self.targets = torch.LongTensor(targets)
-        self.transform = transform
-        
-    def __getitem__(self, index):
-        x = self.data[index]
-        y = self.targets[index]
-        
-        if self.transform:
-            x = self.transform(x)
-        
-        return x, y
-    
-    def __len__(self):
-        return len(self.data)
-
-
-
 
 
 def sim_dist_specifc_loss_spc(spec_emb, ohe_label, ohe_dom, scl, epoch):
@@ -420,11 +374,12 @@ for epoch in range(epochs):
         den+=1.
 
         #torch.cuda.empty_cache()
-        
+    '''
     if int(tot_ortho_loss/den * 1000) == 0:
         previous_margin = margin
         margin = margin * decreasing_coeff
         print("\T\T\T MARGIN decreasing from %f to %f"%(previous_margin,margin))
+    '''    
 
     #MANUAL IMPLEMENTAITON OF THE EMA OPERATION
     if epoch >= 50:
