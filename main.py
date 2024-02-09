@@ -19,6 +19,7 @@ from torch.optim.swa_utils import AveragedModel#, get_ema_multi_avg_fn
 from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as T 
 import torchvision.transforms.functional as TF
+import torch.nn.functional as F
 import random
 import torchcontrib
 from collections import OrderedDict
@@ -361,9 +362,22 @@ for epoch in range(epochs):
         #loss_consistency = loss_consistency_pred #+ loss_consistency_emb
         #loss_consistency = loss_fix_match #loss_consistency_pred
         ########################################
+
+        ##### FIXMATCH ###############
+        _, _, _, pred_unl_target = model.forward_source(x_batch_target_unl, 1)
+        _, _, _, pred_unl_target_strong = model.forward_source(x_batch_target_unl_aug, 1)
+
+        with torch.no_grad():
+            pseudo_labels = torch.softmax(pred_unl_target, dim=1)
+            max_probs, targets_u = torch.max(pseudo_labels, dim=1)
+            mask = max_probs.ge(th_pseudo_label).float()
+
+        unlabeled_loss = (F.cross_entropy(pred_unl_target_strong, targets_u, reduction="none") * mask).mean()
+        ##### FIXMATCH ###############
+
         
         #loss = loss_pred + loss_dom + mixdl_loss_supContraLoss + 0.00001 * l2_reg + loss_ortho #+ loss_consistency
-        loss = loss_pred + loss_dom + 2*mixdl_loss_supContraLoss + loss_ortho #+ entro_regularizer#+ loss_consistency
+        loss = loss_pred + loss_dom + 2*mixdl_loss_supContraLoss + loss_ortho + unlabeled_loss#+ entro_regularizer#+ loss_consistency
         
         loss.backward() # backward pass: backpropagate the prediction loss
         optimizer.step() # gradient descent: adjust the parameters by the gradients collected in the backward pass
