@@ -377,14 +377,14 @@ for epoch in range(epochs):
 
         
         #loss = loss_pred + loss_dom + mixdl_loss_supContraLoss + 0.00001 * l2_reg + loss_ortho #+ loss_consistency
-        loss = loss_pred + loss_dom + 2*mixdl_loss_supContraLoss + loss_ortho + unlabeled_loss#+ entro_regularizer#+ loss_consistency
+        loss = loss_pred + loss_dom + mixdl_loss_supContraLoss + loss_ortho + unlabeled_loss#+ entro_regularizer#+ loss_consistency
         
         loss.backward() # backward pass: backpropagate the prediction loss
         optimizer.step() # gradient descent: adjust the parameters by the gradients collected in the backward pass
         
         tot_loss+= loss.cpu().detach().numpy()
         tot_ortho_loss+=loss_ortho.cpu().detach().numpy()
-        tot_fixmatch_loss = 0#entro_regularizer#loss_consistency.cpu().detach().numpy()
+        tot_fixmatch_loss = unlabeled_loss#entro_regularizer#loss_consistency.cpu().detach().numpy()
         den+=1.
 
         #torch.cuda.empty_cache()
@@ -396,9 +396,11 @@ for epoch in range(epochs):
     '''    
 
     #MANUAL IMPLEMENTAITON OF THE EMA OPERATION
+    '''
     if epoch >= 50:
         current_weights, ghost_weights = modify_weights(model, ghost_weights, momentum_ema)
         model.load_state_dict(current_weights)
+    '''
 
     end = time.time()
     pred_valid, labels_valid = evaluation(model, dataloader_test_target, device)
