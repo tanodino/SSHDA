@@ -365,8 +365,8 @@ for epoch in range(epochs):
 
         ##### FIXMATCH ###############
         model.target.train()
-        _, _, _, pred_unl_target = model.forward_source(x_batch_target_unl, 1)
-        _, _, pred_unl_target_strong_dom, pred_unl_target_strong = model.forward_source(x_batch_target_unl_aug, 1)
+        unl_target_inv, unl_target_spec, pred_unl_target_dom, pred_unl_target = model.forward_source(x_batch_target_unl, 1)
+        unl_target_aug_inv, unl_target_aug_spec, pred_unl_target_strong_dom, pred_unl_target_strong = model.forward_source(x_batch_target_unl_aug, 1)
 
         with torch.no_grad():
             pseudo_labels = torch.softmax(pred_unl_target, dim=1)
@@ -375,13 +375,19 @@ for epoch in range(epochs):
 
         unlabeled_loss = (F.cross_entropy(pred_unl_target_strong, targets_u, reduction="none") * mask).mean()
 
-        unlabeled_loss_dom = (F.cross_entropy(pred_unl_target_strong_dom, torch.ones(pred_unl_target_strong_dom.shape[0]).long().to(device), reduction="none") * mask).mean()
+        unlabeled_loss_dom_aug = (F.cross_entropy(pred_unl_target_strong_dom, torch.ones(pred_unl_target_strong_dom.shape[0]).long().to(device), reduction="none") * mask).mean()
+        unlabeled_loss_dom_orig = (F.cross_entropy(pred_unl_target_dom, torch.ones(pred_unl_target_dom.shape[0]).long().to(device), reduction="none") * mask).mean()
+        unlabeled_loss_dom = ( unlabeled_loss_dom_aug + unlabeled_loss_dom_orig) / 2
+
+        unlabeled_loss_ortho_orig = torch.mean( torch.sum( unl_target_inv * unl_target_spec, dim=1) )
+        unlabeled_loss_ortho_aug = torch.mean( torch.sum( unl_target_aug_inv * unl_target_aug_spec, dim=1) )
+        unlabeled_loss_ortho = (unlabeled_loss_ortho_orig + unlabeled_loss_ortho_aug) / 2
         ##### FIXMATCH ###############
 
         
         #loss = loss_pred + loss_dom + mixdl_loss_supContraLoss + 0.00001 * l2_reg + loss_ortho #+ loss_consistency
         #loss = loss_pred + loss_dom + mixdl_loss_supContraLoss + loss_ortho + unlabeled_loss#+ entro_regularizer#+ loss_consistency
-        loss = loss_pred + loss_dom + unlabeled_loss + loss_ortho + unlabeled_loss_dom  #+ entro_regularizer#+ loss_consistency
+        loss = loss_pred + loss_dom + loss_ortho + unlabeled_loss  + unlabeled_loss_dom + unlabeled_loss_ortho #+ entro_regularizer#+ loss_consistency
         
         loss.backward() # backward pass: backpropagate the prediction loss
         optimizer.step() # gradient descent: adjust the parameters by the gradients collected in the backward pass
