@@ -2,6 +2,7 @@ from typing import Sequence
 import random
 from torch.utils.data import Dataset, DataLoader
 import torch
+import torchvision.transforms.functional as TF
 
 
 class MyRotateTransform():
