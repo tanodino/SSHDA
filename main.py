@@ -365,7 +365,7 @@ for epoch in range(epochs):
 
         ##### FIXMATCH ###############
         _, _, _, pred_unl_target = model.forward_source(x_batch_target_unl, 1)
-        _, _, _, pred_unl_target_strong = model.forward_source(x_batch_target_unl_aug, 1)
+        _, _, pred_unl_target_strong_dom, pred_unl_target_strong = model.forward_source(x_batch_target_unl_aug, 1)
 
         with torch.no_grad():
             pseudo_labels = torch.softmax(pred_unl_target, dim=1)
@@ -373,12 +373,14 @@ for epoch in range(epochs):
             mask = max_probs.ge(th_pseudo_label).float()
 
         unlabeled_loss = (F.cross_entropy(pred_unl_target_strong, targets_u, reduction="none") * mask).mean()
+
+        unlabeled_loss_dom = (F.cross_entropy(pred_unl_target_strong_dom, torch.ones(pred_unl_target_strong_dom.shape[0]), reduction="none") * mask).mean()
         ##### FIXMATCH ###############
 
         
         #loss = loss_pred + loss_dom + mixdl_loss_supContraLoss + 0.00001 * l2_reg + loss_ortho #+ loss_consistency
         #loss = loss_pred + loss_dom + mixdl_loss_supContraLoss + loss_ortho + unlabeled_loss#+ entro_regularizer#+ loss_consistency
-        loss = loss_pred + loss_dom + unlabeled_loss#+ entro_regularizer#+ loss_consistency
+        loss = loss_pred + loss_dom + unlabeled_loss + unlabeled_loss_dom  + loss_ortho #+ entro_regularizer#+ loss_consistency
         
         loss.backward() # backward pass: backpropagate the prediction loss
         optimizer.step() # gradient descent: adjust the parameters by the gradients collected in the backward pass

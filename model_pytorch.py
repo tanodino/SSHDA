@@ -26,6 +26,9 @@ class ORDisModel(torch.nn.Module):
 
     
     def forward_source(self, x, source):
+        self.source.train()
+        self.target.train()
+
         emb = None
         #emb_inv = None
         #emb_spec = None
@@ -40,31 +43,19 @@ class ORDisModel(torch.nn.Module):
         
     
     def forward(self, x):
-        #if self.training:
-        #self.opt_inv.train()
-        #self.opt_spec.train()
-        #self.sar_inv.train()
-        #self.sar_spec.train()
         self.source.train()
         self.target.train()
-        #0 : OPT // 1 : SAR
         x_source, x_target = x
-        #print("x_source ",x_source.shape)
-        #print("x_target ",x_target.shape)
         emb_source_inv, emb_source_spec, dom_source_cl, task_source_cl = self.forward_source(x_source, 0)
         emb_target_inv, emb_target_spec, dom_target_cl, task_target_cl =  self.forward_source(x_target, 1)
         return emb_source_inv, emb_source_spec, dom_source_cl, task_source_cl, emb_target_inv, emb_target_spec, dom_target_cl, task_target_cl
 
     def forward_test_target(self, x):
-        #self.sar_inv.eval()
-        #self.sar_spec.eval()
         self.target.eval()
         emb_target_inv, emb_target_spec, dom_target_cl, task_target_cl =  self.forward_source(x, 1)
         return emb_target_inv, emb_target_spec, dom_target_cl, task_target_cl
 
     def forward_test_source(self, x):
-        #self.opt_inv.eval()
-        #self.opt_spec.eval()
         self.source.eval()
         emb_source_inv, emb_source_spec, dom_source_cl, task_source_cl = self.forward_source(x, 0)
         return emb_source_inv, emb_source_spec, dom_source_cl, task_source_cl
