@@ -54,7 +54,7 @@ data = np.load("%s/%s_data_filtered.npy"%(dir_, target_prefix))
 label = np.load("%s/%s_label_filtered.npy"%(dir_, target_prefix))
 
 train_idx = np.load("%s/%s_%s_%s_train_idx.npy"%(dir_, target_prefix, nsplit, nsamples))
-test_idx = np.setdiff1d(np.arange(train_data.shape[0]), train_idx)
+test_idx = np.setdiff1d(np.arange(data.shape[0]), train_idx)
 
 
 
