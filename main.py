@@ -374,7 +374,7 @@ for epoch in range(epochs):
 
         unlabeled_loss = (F.cross_entropy(pred_unl_target_strong, targets_u, reduction="none") * mask).mean()
 
-        unlabeled_loss_dom = (F.cross_entropy(pred_unl_target_strong_dom, torch.ones(pred_unl_target_strong_dom.shape[0]), reduction="none") * mask).mean()
+        unlabeled_loss_dom = (F.cross_entropy(pred_unl_target_strong_dom, torch.ones(pred_unl_target_strong_dom.shape[0]).to(device), reduction="none") * mask).mean()
         ##### FIXMATCH ###############
 
         
