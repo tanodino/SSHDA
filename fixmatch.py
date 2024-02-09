@@ -50,21 +50,23 @@ nsamples = sys.argv[3]
 nsplit = sys.argv[4]
 
 
-train_data = np.load("%s/%s_data_filtered.npy"%(dir_, target_prefix))
-train_label = np.load("%s/%s_label_filtered.npy"%(dir_, target_prefix))
+data = np.load("%s/%s_data_filtered.npy"%(dir_, target_prefix))
+label = np.load("%s/%s_label_filtered.npy"%(dir_, target_prefix))
 
 train_idx = np.load("%s/%s_%s_%s_train_idx.npy"%(dir_, target_prefix, nsplit, nsamples))
 test_idx = np.setdiff1d(np.arange(train_data.shape[0]), train_idx)
 
 
 
-test_data = train_data[test_idx]
-test_label = train_label[test_idx]
+test_data = data[test_idx]
+test_label = label[test_idx]
 
-train_data = train_data[train_idx]
-train_label = train_label[train_idx]
+unl_data = data[test_idx]
 
-unl_data = train_data[test_idx]
+train_data = data[train_idx]
+train_label = label[train_idx]
+
+
 
 
 print("train_data.shape ",train_data.shape)
