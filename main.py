@@ -26,6 +26,13 @@ from collections import OrderedDict
 from functions import MyRotateTransform, MyDataset_Unl, MyDataset, cumulate_EMA, modify_weights
 
 
+def to_onehot(labels, n_categories, dtype=torch.float32):
+    batch_size = labels.shape[0]
+    one_hot_labels = torch.ones(size=(batch_size, n_categories), dtype=dtype)
+    for i, label in enumerate(labels):
+        one_hot_labels[i] = one_hot_labels[i].scatter_(dim=0, index=label, value=0)
+    return one_hot_labels
+
 #use pred_w.detach() to compute this loss
 def nl_loss(pred_s, pred_w, k, device):
     softmax_pred = F.softmax(pred_s, dim=-1)
@@ -442,12 +449,6 @@ f1_val = f1_score(labels_valid, pred_valid, average="weighted")
 print("-> -> -> -> FINAL PERF AFTER BN STATISTICS UPDATE %f"%f1_val)
 
 
-def to_onehot(labels, n_categories, dtype=torch.float32):
-    batch_size = labels.shape[0]
-    one_hot_labels = torch.ones(size=(batch_size, n_categories), dtype=dtype)
-    for i, label in enumerate(labels):
-        one_hot_labels[i] = one_hot_labels[i].scatter_(dim=0, index=label, value=0)
-    return one_hot_labels
 
 
 
