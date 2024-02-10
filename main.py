@@ -40,7 +40,7 @@ def nl_loss(pred_s, pred_w, k, device):
     topk = torch.topk(pseudo_label, k)[1]
     mask_k_npl = to_onehot(topk, pseudo_label.shape[1], device)
     mask_k_npl = mask_k_npl.to(device)
-    loss_npl = (-F.log(1-softmax_pred+1e-10) * mask_k_npl).sum(dim=1).mean()
+    loss_npl = (-torch.log(1-softmax_pred+1e-10) * mask_k_npl).sum(dim=1).mean()
     return loss_npl
 
 def retrieveModelWeights(model):
