@@ -392,7 +392,7 @@ for epoch in range(epochs):
         ##### FIXMATCH ###############
         
         ###### NEGATIVE LOSS ######
-        k = n_classes//2 
+        k = 3#n_classes//2 
         neg_learn_loss = nl_loss(pred_unl_target_strong, pred_unl_target.detach(), k , device)
         ###########################
         
