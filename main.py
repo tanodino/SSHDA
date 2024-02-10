@@ -446,7 +446,7 @@ for epoch in range(epochs):
         model.load_state_dict(current_state_dict)
 
     
-    print("TRAIN LOSS at Epoch %d: acc on TEST TARGET SET (ORIG) %.2f (EMA) %.2f with train time %d"%(epoch, tot_loss/den, 100*f1_val, 100*f1_val_ema, (end-start)))    
+    print("TRAIN LOSS at Epoch %d: WITH TOTAL LOSS %.4f acc on TEST TARGET SET (ORIG) %.2f (EMA) %.2f with train time %d"%(epoch, tot_loss/den, 100*f1_val, 100*f1_val_ema, (end-start)))    
     sys.stdout.flush()
     
 
