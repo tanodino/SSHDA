@@ -26,9 +26,9 @@ from collections import OrderedDict
 from functions import MyRotateTransform, MyDataset_Unl, MyDataset, cumulate_EMA, modify_weights
 
 
-def to_onehot(labels, n_categories, dtype=torch.float32):
+def to_onehot(labels, n_categories, device, dtype=torch.float32):
     batch_size = labels.shape[0]
-    one_hot_labels = torch.ones(size=(batch_size, n_categories), dtype=dtype)
+    one_hot_labels = torch.ones(size=(batch_size, n_categories), dtype=dtype).to(device)
     for i, label in enumerate(labels):
         one_hot_labels[i] = one_hot_labels[i].scatter_(dim=0, index=label, value=0)
     return one_hot_labels
@@ -38,7 +38,7 @@ def nl_loss(pred_s, pred_w, k, device):
     softmax_pred = F.softmax(pred_s, dim=-1)
     pseudo_label = F.softmax(pred_w, dim=-1)
     topk = torch.topk(pseudo_label, k)[1]
-    mask_k_npl = to_onehot(topk, pseudo_label.shape[1])
+    mask_k_npl = to_onehot(topk, pseudo_label.shape[1], device)
     mask_k_npl = mask_k_npl.to(device)
     loss_npl = (-F.log(1-softmax_pred+1e-10) * mask_k_npl).sum(dim=1).mean()
     return loss_npl
