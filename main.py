@@ -361,16 +361,20 @@ for epoch in range(epochs):
 
         u_pred_loss = (F.cross_entropy(pred_unl_target_strong, targets_u, reduction="none") * mask).mean()
 
-        unlabeled_loss_dom_aug = (F.cross_entropy(pred_unl_target_strong_dom, torch.ones(pred_unl_target_strong_dom.shape[0]).long().to(device), reduction="none") * mask).mean()
-        unlabeled_loss_dom_orig = (F.cross_entropy(pred_unl_target_dom, torch.ones(pred_unl_target_dom.shape[0]).long().to(device), reduction="none") * mask).mean()
+        #unlabeled_loss_dom_aug = (F.cross_entropy(pred_unl_target_strong_dom, torch.ones(pred_unl_target_strong_dom.shape[0]).long().to(device), reduction="none") * mask).mean()
+        #unlabeled_loss_dom_orig = (F.cross_entropy(pred_unl_target_dom, torch.ones(pred_unl_target_dom.shape[0]).long().to(device), reduction="none") * mask).mean()
+        unlabeled_loss_dom_aug = (F.cross_entropy(pred_unl_target_strong_dom, torch.ones(pred_unl_target_strong_dom.shape[0]).long().to(device), reduction="none") ).mean()
+        unlabeled_loss_dom_orig = (F.cross_entropy(pred_unl_target_dom, torch.ones(pred_unl_target_dom.shape[0]).long().to(device), reduction="none") ).mean()
         u_loss_dom = ( unlabeled_loss_dom_aug + unlabeled_loss_dom_orig) / 2
 
         norm_unl_target_inv = F.normalize(unl_target_inv)
         norm_unl_target_spec = F.normalize(unl_target_spec)
         norm_unl_target_aug_inv = F.normalize(unl_target_aug_inv)
         norm_unl_target_aug_spec = F.normalize(unl_target_aug_spec)
-        unlabeled_loss_ortho_orig = torch.mean( torch.sum( norm_unl_target_inv * norm_unl_target_spec, dim=1)  * mask )
-        unlabeled_loss_ortho_aug = torch.mean( torch.sum( norm_unl_target_aug_inv * norm_unl_target_aug_spec, dim=1)  * mask )
+        unlabeled_loss_ortho_orig = torch.mean( torch.sum( norm_unl_target_inv * norm_unl_target_spec, dim=1) )
+        unlabeled_loss_ortho_aug = torch.mean( torch.sum( norm_unl_target_aug_inv * norm_unl_target_aug_spec, dim=1) )
+        #unlabeled_loss_ortho_orig = torch.mean( torch.sum( norm_unl_target_inv * norm_unl_target_spec, dim=1)  * mask )
+        #unlabeled_loss_ortho_aug = torch.mean( torch.sum( norm_unl_target_aug_inv * norm_unl_target_aug_spec, dim=1)  * mask )
         u_loss_ortho = (unlabeled_loss_ortho_orig + unlabeled_loss_ortho_aug) / 2
         ##### FIXMATCH ###############
 
