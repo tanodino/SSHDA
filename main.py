@@ -27,11 +27,12 @@ from functions import MyRotateTransform, MyDataset_Unl, MyDataset, cumulate_EMA,
 
 
 #use pred_w.detach() to compute this loss
-def nl_loss(pred_s, pred_w, k):
+def nl_loss(pred_s, pred_w, k, device):
     softmax_pred = F.softmax(pred_s, axis=-1)
     pseudo_label = F.softmax(pred_w, axis=-1)
     topk = F.topk(pseudo_label, k)[1]
     mask_k_npl = to_onehot(topk, pseudo_label.shape[1])
+    mask_k_npl = mask_k_npl.to(device)
     loss_npl = (-F.log(1-softmax_pred+1e-10) * mask_k_npl).sum(axis=1).mean()
     return loss_npl
 
@@ -382,11 +383,15 @@ for epoch in range(epochs):
         #unlabeled_loss_ortho_aug = torch.mean( torch.sum( norm_unl_target_aug_inv * norm_unl_target_aug_spec, dim=1)  * mask )
         u_loss_ortho = (unlabeled_loss_ortho_orig + unlabeled_loss_ortho_aug) / 2
         ##### FIXMATCH ###############
-
+        
+        ###### NEGATIVE LOSS ######
+        k = n_classes//2 
+        neg_learn_loss = nl_loss(pred_unl_target_strong, pred_unl_target.detach(), k , device)
+        ###########################
         
         #loss = loss_pred + loss_dom + mixdl_loss_supContraLoss + 0.00001 * l2_reg + loss_ortho #+ loss_consistency
         #loss = loss_pred + loss_dom + mixdl_loss_supContraLoss + loss_ortho + unlabeled_loss#+ entro_regularizer#+ loss_consistency
-        loss = loss_pred + loss_dom + loss_ortho + u_pred_loss + u_loss_dom + u_loss_ortho #+ mixdl_loss_supContraLoss#+ entro_regularizer#+ loss_consistency
+        loss = loss_pred + loss_dom + loss_ortho + u_pred_loss + u_loss_dom + u_loss_ortho + neg_learn_loss#+ mixdl_loss_supContraLoss#+ entro_regularizer#+ loss_consistency
         
         loss.backward() # backward pass: backpropagate the prediction loss
         optimizer.step() # gradient descent: adjust the parameters by the gradients collected in the backward pass
