@@ -28,12 +28,12 @@ from functions import MyRotateTransform, MyDataset_Unl, MyDataset, cumulate_EMA,
 
 #use pred_w.detach() to compute this loss
 def nl_loss(pred_s, pred_w, k, device):
-    softmax_pred = F.softmax(pred_s, axis=-1)
-    pseudo_label = F.softmax(pred_w, axis=-1)
+    softmax_pred = F.softmax(pred_s, dim=-1)
+    pseudo_label = F.softmax(pred_w, dim=-1)
     topk = F.topk(pseudo_label, k)[1]
     mask_k_npl = to_onehot(topk, pseudo_label.shape[1])
     mask_k_npl = mask_k_npl.to(device)
-    loss_npl = (-F.log(1-softmax_pred+1e-10) * mask_k_npl).sum(axis=1).mean()
+    loss_npl = (-F.log(1-softmax_pred+1e-10) * mask_k_npl).sum(dim=1).mean()
     return loss_npl
 
 def retrieveModelWeights(model):
