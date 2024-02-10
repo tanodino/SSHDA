@@ -3,6 +3,40 @@ import random
 from torch.utils.data import Dataset, DataLoader
 import torch
 import torchvision.transforms.functional as TF
+from collections import OrderedDict
+
+def cumulate_EMA(model, ema_weights, alpha):
+    current_weights = OrderedDict()
+    current_weights_npy = OrderedDict()
+    state_dict = model.state_dict()
+    for k in state_dict:
+        current_weights_npy[k] = state_dict[k].cpu().detach().numpy()
+
+    if ema_weights is not None:
+        for k in state_dict:
+            current_weights_npy[k] = alpha * ema_weights[k] + (1-alpha) * current_weights_npy[k]
+
+    for k in state_dict:
+        current_weights[k] = torch.tensor( current_weights_npy[k] )
+
+    return current_weights
+
+def modify_weights(model, ema_weights, alpha):
+    current_weights = OrderedDict()
+    current_weights_npy = OrderedDict()
+    state_dict = model.state_dict()
+    
+    for k in state_dict:
+        current_weights_npy[k] = state_dict[k].cpu().detach().numpy()
+
+    if ema_weights is not None:
+        for k in state_dict:
+            current_weights_npy[k] = alpha * ema_weights[k] + (1-alpha) * current_weights_npy[k]
+    
+    for k in state_dict:
+        current_weights[k] = torch.tensor( current_weights_npy[k] )
+    
+    return current_weights, current_weights_npy
 
 
 class MyRotateTransform():

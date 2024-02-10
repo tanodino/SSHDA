@@ -18,6 +18,7 @@ from functions import MyRotateTransform, MyDataset_Unl, MyDataset
 import torchvision.transforms as T 
 import torch.nn.functional as F
 import torchvision.transforms.functional as TF
+from functions import cumulate_EMA
 
 
 def evaluation(model, dataloader, device):
@@ -129,6 +130,8 @@ loss_fn = nn.CrossEntropyLoss()
 optimizer = torch.optim.AdamW(params=model.parameters(), lr=learning_rate)
 
 
+ema_weights = None
+momentum_ema = .95
 epochs = 300
 # Loop through the data
 valid_f1 = 0.0
@@ -169,7 +172,19 @@ for epoch in range(epochs):
     end = time.time()
     pred_valid, labels_valid = evaluation(model, dataloader_test, device)
     f1_val = f1_score(labels_valid, pred_valid, average="weighted")
-    print("TRAIN LOSS at Epoch %d: %.4f with acc on TEST TARGET SET %.2f with training time %d"%(epoch, tot_loss/den, 100*f1_val,(end-start)))    
+
+    ####################### EMA #####################################
+    f1_val_ema = 0
+    if epoch >= 50:
+        ema_weights = cumulate_EMA(model, ema_weights, momentum_ema)
+        current_state_dict = model.state_dict()
+        model.load_state_dict(ema_weights)
+        pred_valid, labels_valid = evaluation(model, dataloader_test, device)
+        f1_val_ema = f1_score(labels_valid, pred_valid, average="weighted")
+        model.load_state_dict(current_state_dict)
+    ####################### EMA #####################################
+    
+    print("TRAIN LOSS at Epoch %d: %.4f with acc on TEST TARGET SET (ORIG) %.2f (EMA) %.2f with training time %d"%(epoch, tot_loss/den, 100*f1_val,100*f1_val_ema, (end-start)))    
     sys.stdout.flush()
 
 

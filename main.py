@@ -23,41 +23,12 @@ import torch.nn.functional as F
 import random
 import torchcontrib
 from collections import OrderedDict
-from functions import MyRotateTransform, MyDataset_Unl, MyDataset
+from functions import MyRotateTransform, MyDataset_Unl, MyDataset, cumulate_EMA, modify_weights
 
 
-def cumulate_EMA(model, ema_weights, alpha):
-    current_weights = OrderedDict()
-    current_weights_npy = OrderedDict()
-    state_dict = model.state_dict()
-    for k in state_dict:
-        current_weights_npy[k] = state_dict[k].cpu().detach().numpy()
 
-    if ema_weights is not None:
-        for k in state_dict:
-            current_weights_npy[k] = alpha * ema_weights[k] + (1-alpha) * current_weights_npy[k]
 
-    for k in state_dict:
-        current_weights[k] = torch.tensor( current_weights_npy[k] )
 
-    return current_weights
-
-def modify_weights(model, ema_weights, alpha):
-    current_weights = OrderedDict()
-    current_weights_npy = OrderedDict()
-    state_dict = model.state_dict()
-    
-    for k in state_dict:
-        current_weights_npy[k] = state_dict[k].cpu().detach().numpy()
-
-    if ema_weights is not None:
-        for k in state_dict:
-            current_weights_npy[k] = alpha * ema_weights[k] + (1-alpha) * current_weights_npy[k]
-    
-    for k in state_dict:
-        current_weights[k] = torch.tensor( current_weights_npy[k] )
-    
-    return current_weights, current_weights_npy
 
 def retrieveModelWeights(model):
     ##### REASONING FLAT MINIMA #####
@@ -435,7 +406,7 @@ for epoch in range(epochs):
     pred_valid, labels_valid = evaluation(model, dataloader_test_target, device)
     f1_val = f1_score(labels_valid, pred_valid, average="weighted")
     
-    ####################
+    ####################### EMA #####################################
     f1_val_ema = 0
     if epoch >= 50:
         ema_weights = cumulate_EMA(model, ema_weights, momentum_ema)
@@ -444,7 +415,7 @@ for epoch in range(epochs):
         pred_valid, labels_valid = evaluation(model, dataloader_test_target, device)
         f1_val_ema = f1_score(labels_valid, pred_valid, average="weighted")
         model.load_state_dict(current_state_dict)
-
+    ####################### EMA #####################################
     
     print("TRAIN LOSS at Epoch %d: WITH TOTAL LOSS %.4f acc on TEST TARGET SET (ORIG) %.2f (EMA) %.2f with train time %d"%(epoch, tot_loss/den, 100*f1_val, 100*f1_val_ema, (end-start)))    
     sys.stdout.flush()
