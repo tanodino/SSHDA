@@ -26,8 +26,23 @@ from collections import OrderedDict
 from functions import MyRotateTransform, MyDataset_Unl, MyDataset
 
 
+def cumulate_EMA(model, ema_weights, alpha):
+    current_weights = OrderedDict()
+    current_weights_npy = OrderedDict()
+    state_dict = model.state_dict()
+    for k in state_dict:
+        current_weights_npy[k] = state_dict[k].cpu().detach().numpy()
 
-def modify_weights(model, ghost_weights, alpha):
+    if ema_weights is not None:
+        for k in state_dict:
+            current_weights_npy[k] = alpha * ema_weights[k] + (1-alpha) * current_weights_npy[k]
+
+    for k in state_dict:
+        current_weights[k] = torch.tensor( current_weights_npy[k] )
+
+    return current_weights
+
+def modify_weights(model, ema_weights, alpha):
     current_weights = OrderedDict()
     current_weights_npy = OrderedDict()
     state_dict = model.state_dict()
@@ -35,9 +50,9 @@ def modify_weights(model, ghost_weights, alpha):
     for k in state_dict:
         current_weights_npy[k] = state_dict[k].cpu().detach().numpy()
 
-    if ghost_weights is not None:
+    if ema_weights is not None:
         for k in state_dict:
-            current_weights_npy[k] = alpha * ghost_weights[k] + (1-alpha) * current_weights_npy[k]
+            current_weights_npy[k] = alpha * ema_weights[k] + (1-alpha) * current_weights_npy[k]
     
     for k in state_dict:
         current_weights[k] = torch.tensor( current_weights_npy[k] )
@@ -256,15 +271,15 @@ optimizer = torch.optim.Adam(params=model.parameters(), lr=learning_rate)
 scl = SupervisedContrastiveLoss()
 
 
-epochs = 500#300
+epochs = 300
 # Loop through the data
 valid_f1 = 0.0
 margin = .3
 decreasing_coeff = 0.95
 i = 0
 model_weights = []
-ghost_weights = None
-momentum_ema = .9
+ema_weights = None
+momentum_ema = .95
 th_pseudo_label = .95
 
 den_entro = torch.log2(torch.tensor(n_classes, dtype=torch.float32) )
@@ -373,11 +388,11 @@ for epoch in range(epochs):
             max_probs, targets_u = torch.max(pseudo_labels, dim=1)
             mask = max_probs.ge(th_pseudo_label).float()
 
-        unlabeled_loss = (F.cross_entropy(pred_unl_target_strong, targets_u, reduction="none") * mask).mean()
+        u_pred_loss = (F.cross_entropy(pred_unl_target_strong, targets_u, reduction="none") * mask).mean()
 
         unlabeled_loss_dom_aug = (F.cross_entropy(pred_unl_target_strong_dom, torch.ones(pred_unl_target_strong_dom.shape[0]).long().to(device), reduction="none") * mask).mean()
         unlabeled_loss_dom_orig = (F.cross_entropy(pred_unl_target_dom, torch.ones(pred_unl_target_dom.shape[0]).long().to(device), reduction="none") * mask).mean()
-        unlabeled_loss_dom = ( unlabeled_loss_dom_aug + unlabeled_loss_dom_orig) / 2
+        u_loss_dom = ( unlabeled_loss_dom_aug + unlabeled_loss_dom_orig) / 2
 
         norm_unl_target_inv = F.normalize(unl_target_inv)
         norm_unl_target_spec = F.normalize(unl_target_spec)
@@ -385,20 +400,20 @@ for epoch in range(epochs):
         norm_unl_target_aug_spec = F.normalize(unl_target_aug_spec)
         unlabeled_loss_ortho_orig = torch.mean( torch.sum( norm_unl_target_inv * norm_unl_target_spec, dim=1)  * mask )
         unlabeled_loss_ortho_aug = torch.mean( torch.sum( norm_unl_target_aug_inv * norm_unl_target_aug_spec, dim=1)  * mask )
-        unlabeled_loss_ortho = (unlabeled_loss_ortho_orig + unlabeled_loss_ortho_aug) / 2
+        u_loss_ortho = (unlabeled_loss_ortho_orig + unlabeled_loss_ortho_aug) / 2
         ##### FIXMATCH ###############
 
         
         #loss = loss_pred + loss_dom + mixdl_loss_supContraLoss + 0.00001 * l2_reg + loss_ortho #+ loss_consistency
         #loss = loss_pred + loss_dom + mixdl_loss_supContraLoss + loss_ortho + unlabeled_loss#+ entro_regularizer#+ loss_consistency
-        loss = loss_pred + loss_dom + loss_ortho + unlabeled_loss  + unlabeled_loss_dom + unlabeled_loss_ortho #+ entro_regularizer#+ loss_consistency
+        loss = loss_pred + loss_dom + loss_ortho + u_pred_loss + u_loss_dom + u_loss_ortho #+ entro_regularizer#+ loss_consistency
         
         loss.backward() # backward pass: backpropagate the prediction loss
         optimizer.step() # gradient descent: adjust the parameters by the gradients collected in the backward pass
         
         tot_loss+= loss.cpu().detach().numpy()
         tot_ortho_loss+=loss_ortho.cpu().detach().numpy()
-        tot_fixmatch_loss = unlabeled_loss#entro_regularizer#loss_consistency.cpu().detach().numpy()
+        tot_fixmatch_loss = u_pred_loss#entro_regularizer#loss_consistency.cpu().detach().numpy()
         den+=1.
 
         #torch.cuda.empty_cache()
@@ -412,17 +427,26 @@ for epoch in range(epochs):
     #MANUAL IMPLEMENTAITON OF THE EMA OPERATION
     '''
     if epoch >= 50:
-        current_weights, ghost_weights = modify_weights(model, ghost_weights, momentum_ema)
+        current_weights, ema_weights = modify_weights(model, ema_weights, momentum_ema)
         model.load_state_dict(current_weights)
     '''
 
     end = time.time()
     pred_valid, labels_valid = evaluation(model, dataloader_test_target, device)
     f1_val = f1_score(labels_valid, pred_valid, average="weighted")
-    #ema_pred_valid, ema_labels_valid = evaluation(ema_model, dataloader_test_target, device, source_prefix)
-    #f1_val_ema = f1_score(ema_labels_valid, ema_pred_valid, average="weighted")
-    #print("TRAIN LOSS at Epoch %d: %.4f with acc on TEST TARGET SET %.2f with (EMA) acc on TETS TARGET SET %.2f with training time %d"%(epoch, tot_loss/den, 100*f1_val,100*f1_val_ema, (end-start)))    
-    print("TRAIN LOSS at Epoch %d: %.4f with ORTHO LOSS %.4f with CONSISTENCY LOSS %.4f acc on TEST TARGET SET %.2f with training time %d"%(epoch, tot_loss/den, tot_ortho_loss/den, tot_fixmatch_loss/den, 100*f1_val, (end-start)))    
+    
+    ####################
+    f1_val_ema = 0
+    if epoch >= 50:
+        ema_weights = cumulate_EMA(model, ema_weights, momentum_ema)
+        current_state_dict = model.state_dict()
+        model.load_state_dict(ema_weights)
+        pred_valid, labels_valid = evaluation(model, dataloader_test_target, device)
+        f1_val_ema = f1_score(labels_valid, pred_valid, average="weighted")
+        model.load_state_dict(current_state_dict)
+
+    
+    print("TRAIN LOSS at Epoch %d: acc on TEST TARGET SET (ORIG) %.2f (EMA) %.2f with train time %d"%(epoch, tot_loss/den, 100*f1_val, 100*f1_val_ema, (end-start)))    
     sys.stdout.flush()
     
 
