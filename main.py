@@ -26,9 +26,14 @@ from collections import OrderedDict
 from functions import MyRotateTransform, MyDataset_Unl, MyDataset, cumulate_EMA, modify_weights
 
 
-
-
-
+#use pred_w.detach() to compute this loss
+def nl_loss(pred_s, pred_w, k):
+    softmax_pred = F.softmax(pred_s, axis=-1)
+    pseudo_label = F.softmax(pred_w, axis=-1)
+    topk = F.topk(pseudo_label, k)[1]
+    mask_k_npl = to_onehot(topk, pseudo_label.shape[1])
+    loss_npl = (-F.log(1-softmax_pred+1e-10) * mask_k_npl).sum(axis=1).mean()
+    return loss_npl
 
 def retrieveModelWeights(model):
     ##### REASONING FLAT MINIMA #####
@@ -432,14 +437,12 @@ f1_val = f1_score(labels_valid, pred_valid, average="weighted")
 print("-> -> -> -> FINAL PERF AFTER BN STATISTICS UPDATE %f"%f1_val)
 
 
-#path = "prova.pth"
-#torch.save(swa_model.state_dict(), path)
-#model.load_state_dict(torch.load(path))
+def to_onehot(labels, n_categories, dtype=torch.float32):
+    batch_size = labels.shape[0]
+    one_hot_labels = torch.ones(size=(batch_size, n_categories), dtype=dtype)
+    for i, label in enumerate(labels):
+        one_hot_labels[i] = one_hot_labels[i].scatter_(dim=0, index=label, value=0)
+    return one_hot_labels
 
 
-
-#optimizer.swap_swa_sgd()
-#pred_valid, labels_valid = evaluation(model, dataloader_test_target, device)
-#f1_val = f1_score(labels_valid, pred_valid, average="weighted")
-#print("SWA MODEL FINAL ACCURACY ON TEST TARGET SET %.2f"%(100*f1_val))    
 
