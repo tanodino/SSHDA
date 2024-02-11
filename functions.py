@@ -41,7 +41,7 @@ def cumulate_EMA(model, ema_weights, alpha):
 
     if ema_weights is not None:
         for k in state_dict:
-            current_weights_npy[k] = alpha * ema_weights[k] + (1-alpha) * current_weights_npy[k]
+            current_weights_npy[k] = alpha * ema_weights[k].cpu().detach().numpy() + (1-alpha) * current_weights_npy[k]
 
     for k in state_dict:
         current_weights[k] = torch.tensor( current_weights_npy[k] )
