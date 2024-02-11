@@ -19,6 +19,8 @@ import torchvision.transforms as T
 import torch.nn.functional as F
 import torchvision.transforms.functional as TF
 from functions import cumulate_EMA
+import functions
+import os
 
 
 def evaluation(model, dataloader, device):
@@ -76,7 +78,7 @@ train_data, train_label = dataAugRotate(train_data, train_label, (1,2))
 print("train_data.shape ",train_data.shape)
 
 n_classes = len(np.unique(train_label))
-train_batch_size = 512#1024#512
+#train_batch_size = 512#1024#512
 
 train_data, train_label = shuffle(train_data, train_label)
 
@@ -85,35 +87,38 @@ x_train_source = torch.tensor(train_data, dtype=torch.float32)
 y_train_source = torch.tensor(train_label, dtype=torch.int64)
 
 #dataset_source = TensorDataset(x_train_source, y_train_source)
+'''
 angle = [0, 90, 180, 270]
 transform_source = T.Compose([
     T.RandomHorizontalFlip(),
     T.RandomVerticalFlip(),
     T.RandomApply([MyRotateTransform(angles=angle)], p=0.5)
     ])
-dataset_source = MyDataset(x_train_source, y_train_source, transform=transform_source)
-dataloader_train = DataLoader(dataset_source, shuffle=True, batch_size=train_batch_size)
+'''
+dataset_source = MyDataset(x_train_source, y_train_source, transform=transform)
+dataloader_train = DataLoader(dataset_source, shuffle=True, batch_size=TRAIN_BATCH_SIZE)
 
 
 #DATALOADER TARGET UNLABELLED
 x_train_target_unl = torch.tensor(unl_data, dtype=torch.float32)
 
+'''
 transform_target_unl = T.Compose([
     T.RandomHorizontalFlip(),
     T.RandomVerticalFlip(),
     T.RandomApply([MyRotateTransform(angles=angle)], p=0.5),
     T.RandomApply([T.ColorJitter()], p=0.5)
     ])
-
-dataset_train_target_unl = MyDataset_Unl(x_train_target_unl, transform_target_unl)
-dataloader_train_unl = DataLoader(dataset_train_target_unl, shuffle=True, batch_size=train_batch_size)
+'''
+dataset_train_target_unl = MyDataset_Unl(x_train_target_unl, transform)
+dataloader_train_unl = DataLoader(dataset_train_target_unl, shuffle=True, batch_size=TRAIN_BATCH_SIZE)
 
 
 #DATALOADER TEST
 x_test = torch.tensor(test_data, dtype=torch.float32)
 y_test = torch.tensor(test_label, dtype=torch.int64)
 dataset_test = TensorDataset(x_test, y_test)
-dataloader_test = DataLoader(dataset_test, shuffle=True, batch_size=train_batch_size)
+dataloader_test = DataLoader(dataset_test, shuffle=True, batch_size=TRAIN_BATCH_SIZE)
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -124,19 +129,15 @@ model._modules["fc"]  = nn.Linear(in_features=512, out_features=n_classes )
 
 model = model.to(device)
 
-
-learning_rate = 0.0001
 loss_fn = nn.CrossEntropyLoss()
-optimizer = torch.optim.AdamW(params=model.parameters(), lr=learning_rate)
+optimizer = torch.optim.AdamW(params=model.parameters(), lr=LEARNING_RATE)
 
 
 ema_weights = None
-momentum_ema = .95
-epochs = 300
 # Loop through the data
 valid_f1 = 0.0
-th_fixmatch = .95
-for epoch in range(epochs):
+
+for epoch in range(EPOCHS):
     start = time.time()
     model.train()
     tot_loss = 0.0
@@ -159,7 +160,7 @@ for epoch in range(epochs):
         with torch.no_grad():
             pseudo_labels = torch.softmax(pred_u_weak, dim=1)
             max_probs, targets_u = torch.max(pseudo_labels, dim=1)
-            mask = max_probs.ge(th_fixmatch).float()
+            mask = max_probs.ge(TH_FIXMATCH).float()
 
         unlabeled_loss = (F.cross_entropy(prede_u_strong, targets_u, reduction="none") * mask).mean()
 
@@ -176,15 +177,21 @@ for epoch in range(epochs):
     ####################### EMA #####################################
     f1_val_ema = 0
     if epoch >= 50:
-        ema_weights = cumulate_EMA(model, ema_weights, momentum_ema)
+        ema_weights = cumulate_EMA(model, ema_weights, MOMENTUM_EMA)
         current_state_dict = model.state_dict()
         model.load_state_dict(ema_weights)
         pred_valid, labels_valid = evaluation(model, dataloader_test, device)
         f1_val_ema = f1_score(labels_valid, pred_valid, average="weighted")
         model.load_state_dict(current_state_dict)
     ####################### EMA #####################################
-    
+
     print("TRAIN LOSS at Epoch %d: %.4f with acc on TEST TARGET SET (ORIG) %.2f (EMA) %.2f with training time %d"%(epoch, tot_loss/den, 100*f1_val,100*f1_val_ema, (end-start)))    
     sys.stdout.flush()
 
+dir_name = dir_+"/FIXMATCH"
+if not os.path.exists(dir_name):
+    os.mkdir(dir_name)
 
+output_file = dir_name+"/%s_%s_%s.pth"%(target_prefix, nsplit, nsamples)
+model.load_state_dict(ema_weights)
+torch.save(model.state_dict(), output_file)

@@ -4,6 +4,33 @@ from torch.utils.data import Dataset, DataLoader
 import torch
 import torchvision.transforms.functional as TF
 from collections import OrderedDict
+import torchvision.transforms as T 
+
+TRAIN_BATCH_SIZE = 128#16#512#1024#512
+LEARNING_RATE = 0.0001
+MOMENTUM_EMA = .95
+EPOCHS = 300
+TH_FIXMATCH = .95
+
+
+class MyRotateTransform():
+    def __init__(self, angles: Sequence[int]):
+        self.angles = angles
+
+    def __call__(self, x):
+        angle = random.choice(self.angles)
+        return TF.rotate(x, angle)
+
+
+angle = [0, 90, 180, 270]
+transform = T.Compose([
+    T.RandomHorizontalFlip(),
+    T.RandomVerticalFlip(),
+    T.RandomApply([MyRotateTransform(angles=angle)], p=0.5),
+    T.RandomApply([T.ColorJitter()], p=0.5)
+    ])
+
+
 
 def cumulate_EMA(model, ema_weights, alpha):
     current_weights = OrderedDict()
@@ -39,13 +66,6 @@ def modify_weights(model, ema_weights, alpha):
     return current_weights, current_weights_npy
 
 
-class MyRotateTransform():
-    def __init__(self, angles: Sequence[int]):
-        self.angles = angles
-
-    def __call__(self, x):
-        angle = random.choice(self.angles)
-        return TF.rotate(x, angle)
 
 
 class MyDataset_Unl(Dataset):

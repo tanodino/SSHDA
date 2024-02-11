@@ -24,6 +24,8 @@ import random
 import torchcontrib
 from collections import OrderedDict
 from functions import MyRotateTransform, MyDataset_Unl, MyDataset, cumulate_EMA, modify_weights
+import functions
+
 
 def get_kTop(pred_s, pred_w):
     pseudo_labels = F.softmax(pred_w, dim=-1)
@@ -185,7 +187,7 @@ sys.stdout.flush()
 n_classes = len(np.unique(source_label))
 
 
-train_batch_size = 128#16#512#1024#512
+#train_batch_size = 128#16#512#1024#512
 
 source_data, source_label = shuffle(source_data, source_label)
 train_target_data, train_target_label = shuffle(train_target_data, train_target_label)
@@ -206,7 +208,7 @@ transform_source = T.Compose([
     T.RandomApply([MyRotateTransform(angles=angle)], p=0.5)
     ])
 dataset_source = MyDataset(x_train_source, y_train_source, transform=transform_source)
-dataloader_source = DataLoader(dataset_source, shuffle=True, batch_size=train_batch_size)
+dataloader_source = DataLoader(dataset_source, shuffle=True, batch_size=TRAIN_BATCH_SIZE)
 
 #DATALOADER TARGET TRAIN
 x_train_target = torch.tensor(train_target_data, dtype=torch.float32)
@@ -220,7 +222,7 @@ transform_target = T.Compose([
 
 #dataset_train_target = TensorDataset(x_train_target, y_train_target)
 dataset_train_target = MyDataset(x_train_target, y_train_target, transform=transform_target)
-dataloader_train_target = DataLoader(dataset_train_target, shuffle=True, batch_size=train_batch_size)
+dataloader_train_target = DataLoader(dataset_train_target, shuffle=True, batch_size=TRAIN_BATCH_SIZE)
 
 #DATALOADER TARGET UNLABELLED
 x_train_target_unl = torch.tensor(test_target_data_unl, dtype=torch.float32)
@@ -233,7 +235,7 @@ transform_target_unl = T.Compose([
     ])
 
 dataset_train_target_unl = MyDataset_Unl(x_train_target_unl, transform_target_unl)
-dataloader_train_target_unl = DataLoader(dataset_train_target_unl, shuffle=True, batch_size=train_batch_size)
+dataloader_train_target_unl = DataLoader(dataset_train_target_unl, shuffle=True, batch_size=TRAIN_BATCH_SIZE)
 
 #DATALOADER TARGET TEST
 x_test_target = torch.tensor(test_target_data, dtype=torch.float32)
