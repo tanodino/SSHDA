@@ -119,10 +119,10 @@ target_prefix = sys.argv[3]
 nsamples = sys.argv[4]
 nsplit = sys.argv[5]
 
-source_data = np.load("%s/%s_data_filtered.npy"%(dir,source_prefix) )
-target_data = np.load("%s/%s_data_filtered.npy"%(dir,target_prefix) )
-source_label = np.load("%s/%s_label_filtered.npy"%(dir,source_prefix) )
-target_label = np.load("%s/%s_label_filtered.npy"%(dir,target_prefix) )
+source_data = np.load("%s/%s_data_filtered.npy"%(dir_,source_prefix) )
+target_data = np.load("%s/%s_data_filtered.npy"%(dir_,target_prefix) )
+source_label = np.load("%s/%s_label_filtered.npy"%(dir_,source_prefix) )
+target_label = np.load("%s/%s_label_filtered.npy"%(dir_,target_prefix) )
 
 print("data loaded")
 print("source_data ",source_data.shape)
