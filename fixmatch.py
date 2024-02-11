@@ -18,7 +18,7 @@ from functions import MyRotateTransform, MyDataset_Unl, MyDataset
 import torchvision.transforms as T 
 import torch.nn.functional as F
 import torchvision.transforms.functional as TF
-from functions import cumulate_EMA
+from functions import cumulate_EMA, transform
 import functions
 import os
 
