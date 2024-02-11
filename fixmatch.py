@@ -18,8 +18,8 @@ from functions import MyRotateTransform, MyDataset_Unl, MyDataset
 import torchvision.transforms as T 
 import torch.nn.functional as F
 import torchvision.transforms.functional as TF
-from functions import cumulate_EMA, transform
-import functions
+from functions import cumulate_EMA, transform, TRAIN_BATCH_SIZE, LEARNING_RATE, MOMENTUM_EMA, EPOCHS, TH_FIXMATCH
+#import functions
 import os
 
 
