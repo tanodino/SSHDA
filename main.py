@@ -3,9 +3,8 @@
 import torch
 import torch.nn as nn
 import sys
-from torch.utils.data import TensorDataset, DataLoader
+from torch.utils.data import TensorDataset, DataLoader, Dataset
 import numpy as np
-import sys
 from sklearn.utils import shuffle
 #from model_transformer import TransformerEncoder
 from model_pytorch import ORDisModel, SupervisedContrastiveLoss
@@ -14,9 +13,7 @@ from sklearn.metrics import f1_score
 from torchvision.models import resnet18
 from sklearn.model_selection import train_test_split
 #from torchvision.models import convnext_tiny
-from torch.optim.swa_utils import AveragedModel#, get_ema_multi_avg_fn
 #from torchvision import transforms
-from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as T 
 import torchvision.transforms.functional as TF
 import torch.nn.functional as F
