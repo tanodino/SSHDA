@@ -31,13 +31,13 @@ def get_kTop(pred_s, pred_w):
     softmax_pred = F.softmax(pred_s, dim=-1)
     _, targets = torch.max(pseudo_labels, dim=1)
     targets = targets.unsqueeze(-1)
+    print(targets)
     sorted_idx = torch.argsort(softmax_pred, descending=True, dim=1)
     print(sorted_idx)
     mask = sorted_idx.eq(targets).float()
     print(mask)
     mask = mask.sum(dim=0).cpu().detach().numpy()
     print(mask)
-    exit()
     idx = np.arange(mask.shape[0])
     idx = idx[::-1]
     for i in idx:
@@ -414,6 +414,7 @@ for epoch in range(epochs):
         #k = 3#n_classes//2
         k = get_kTop(pred_unl_target_strong.detach(), pred_unl_target.detach())
         print("k %d"%k)
+        exit()
         k = min(k, n_classes//2)
         neg_learn_loss = nl_loss(pred_unl_target_strong, pred_unl_target.detach(), k , device)
         ###########################
