@@ -34,7 +34,7 @@ nsplits = 5
 data = np.load("%s/%s_data_filtered.npy"%(dir_, target_prefix))
 label = np.load("%s/%s_label_filtered.npy"%(dir_, target_prefix))
 
-n_classes = len(np.unique(test_label))
+n_classes = len(np.unique(label))
 
 model = resnet18(weights=None)
 model.conv1 = nn.Conv2d(data.shape[1], 64, kernel_size=7, stride=2, padding=3,bias=False)
@@ -49,7 +49,7 @@ for nsplit in range(nsplits):
     test_idx = np.setdiff1d(np.arange(data.shape[0]), train_idx)
     test_data = data[test_idx]
     test_label = label[test_idx]
-    
+
     #DATALOADER TEST
     x_test = torch.tensor(test_data, dtype=torch.float32)
     y_test = torch.tensor(test_label, dtype=torch.int64)
