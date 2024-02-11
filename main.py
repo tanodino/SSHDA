@@ -263,9 +263,9 @@ for epoch in range(EPOCHS):
         #u_loss_dom = ( unlabeled_loss_dom_aug + unlabeled_loss_dom_orig) / 2
 
         unl_inv = torch.cat([unl_target_inv,unl_target_aug_inv],dim=0)
-        norm_unl_inv = F.normalize(norm_unl_inv)
+        norm_unl_inv = F.normalize(unl_inv)
         unl_spec = torch.cat([unl_target_spec,unl_target_aug_spec],dim=0)
-        norm_unl_spec = F.normalize(norm_unl_spec)
+        norm_unl_spec = F.normalize(unl_spec)
         u_loss_ortho = torch.mean( torch.sum( norm_unl_inv * norm_unl_spec, dim=1) )
 
         '''
