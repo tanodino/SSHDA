@@ -14,7 +14,7 @@ from sklearn.metrics import f1_score
 from torchvision.models import resnet18
 from sklearn.model_selection import train_test_split
 from torchvision.models import convnext_tiny
-from functions import cumulate_EMA, transform, TRAIN_BATCH_SIZE, LEARNING_RATE, MOMENTUM_EMA, EPOCHS, TH_FIXMATCH, WARM_UP_EPOCH_EMA
+from functions import MyRotateTransform, MyDataset_Unl, MyDataset, cumulate_EMA, transform, TRAIN_BATCH_SIZE, LEARNING_RATE, MOMENTUM_EMA, EPOCHS, TH_FIXMATCH, WARM_UP_EPOCH_EMA
 import os
 
 
@@ -70,9 +70,8 @@ train_data, train_label = shuffle(train_data, train_label)
 x_train = torch.tensor(train_data, dtype=torch.float32)
 y_train = torch.tensor(train_label, dtype=torch.int64)
 
-dataset_train = TensorDataset(x_train, y_train)
-dataloader_train = DataLoader(dataset_train, shuffle=True, batch_size=TRAIN_BATCH_SIZE)
-
+dataset_source = MyDataset(x_train, y_train, transform=transform)
+dataloader_train = DataLoader(dataset_source, shuffle=True, batch_size=TRAIN_BATCH_SIZE)
 
 #DATALOADER TEST
 x_test = torch.tensor(test_data, dtype=torch.float32)
@@ -94,13 +93,13 @@ model = model.to(device)
 
 learning_rate = 0.0001
 loss_fn = nn.CrossEntropyLoss()
-optimizer = torch.optim.AdamW(params=model.parameters(), lr=learning_rate)
+optimizer = torch.optim.AdamW(params=model.parameters(), lr=LEARNING_RATE)
 
 
-epochs = 300
 # Loop through the data
+ema_weights = None
 valid_f1 = 0.0
-for epoch in range(epochs):
+for epoch in range(EPOCHS):
     start = time.time()
     model.train()
     tot_loss = 0.0
@@ -112,10 +111,8 @@ for epoch in range(epochs):
 
         pred = model(x_batch_sar)        
         loss_pred = loss_fn(pred, y_batch_sar)
-        l2_reg = sum(p.pow(2).sum() for p in model.parameters())
 
-
-        loss = loss_pred + 0.0001 * l2_reg
+        loss = loss_pred
         loss.backward() # backward pass: backpropagate the prediction loss
         optimizer.step() # gradient descent: adjust the parameters by the gradients collected in the backward pass
         tot_loss+= loss.cpu().detach().numpy()
@@ -124,7 +121,27 @@ for epoch in range(epochs):
     end = time.time()
     pred_valid, labels_valid = evaluation(model, dataloader_test, device)
     f1_val = f1_score(labels_valid, pred_valid, average="weighted")
-    print("TRAIN LOSS at Epoch %d: %.4f with acc on TEST TARGET SET %.2f with training time %d"%(epoch, tot_loss/den, 100*f1_val,(end-start)))    
+    
+    ####################### EMA #####################################
+    f1_val_ema = 0
+    if epoch >= WARM_UP_EPOCH_EMA:
+        ema_weights = cumulate_EMA(model, ema_weights, MOMENTUM_EMA)
+        current_state_dict = model.state_dict()
+        model.load_state_dict(ema_weights)
+        pred_valid, labels_valid = evaluation(model, dataloader_test, device)
+        f1_val_ema = f1_score(labels_valid, pred_valid, average="weighted")
+        model.load_state_dict(current_state_dict)
+    ####################### EMA #####################################
+    f1_val_ema
+    
+    print("TRAIN LOSS at Epoch %d: %.4f with acc on TEST SET (ORIG) %.2f (EMA) %.2f with training time %d"%(epoch, tot_loss/den, 100*f1_val,100*f1_val_ema, (end-start)))    
     sys.stdout.flush()
 
 
+dir_name = dir_+"/DIRECT_TARGET"
+if not os.path.exists(dir_name):
+    os.mkdir(dir_name)
+
+output_file = dir_name+"/%s_%s_%s.pth"%(target_prefix, nsplit, nsamples)
+model.load_state_dict(ema_weights)
+torch.save(model.state_dict(), output_file)
