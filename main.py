@@ -98,10 +98,6 @@ def evaluation(model, dataloader, device):
         y_batch = y_batch.to(device)
         pred = None
         _, _ ,_, pred = model.forward_test_target(x_batch)
-        #if source_prefix == "MS":
-        #    _, _ ,_, pred = model.forward_test_sar(x_batch)
-        #else:
-        #    _, _ ,_, pred = model.forward_test_opt(x_batch)
         pred_npy = np.argmax(pred.cpu().detach().numpy(), axis=1)
         tot_pred.append( pred_npy )
         tot_labels.append( y_batch.cpu().detach().numpy())
@@ -267,8 +263,10 @@ for epoch in range(EPOCHS):
         #u_loss_dom = ( unlabeled_loss_dom_aug + unlabeled_loss_dom_orig) / 2
 
         unl_inv = torch.cat([unl_target_inv,unl_target_aug_inv],dim=0)
+        norm_unl_inv = F.normalize(norm_unl_inv)
         unl_spec = torch.cat([unl_target_spec,unl_target_aug_spec],dim=0)
-        u_loss_ortho = torch.mean( torch.sum( unl_inv * unl_spec, dim=1) )
+        norm_unl_spec = F.normalize(norm_unl_spec)
+        u_loss_ortho = torch.mean( torch.sum( norm_unl_inv * norm_unl_spec, dim=1) )
 
         '''
         norm_unl_target_inv = F.normalize(unl_target_inv)
@@ -281,6 +279,7 @@ for epoch in range(EPOCHS):
         '''
         ##### FIXMATCH ###############
         
+        ## BoostingSemi-SupervisedLearningbyExploitingAllUnlabeledData ##
         ###### NEGATIVE LOSS ######
         k = get_kTop(pred_unl_target_strong.detach(), pred_unl_target.detach())        
         history_k.append(k)
