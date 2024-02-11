@@ -132,7 +132,7 @@ for epoch in range(EPOCHS):
         f1_val_ema = f1_score(labels_valid, pred_valid, average="weighted")
         model.load_state_dict(current_state_dict)
     ####################### EMA #####################################
-    f1_val_ema
+    #f1_val_ema
     
     print("TRAIN LOSS at Epoch %d: %.4f with acc on TEST SET (ORIG) %.2f (EMA) %.2f with training time %d"%(epoch, tot_loss/den, 100*f1_val,100*f1_val_ema, (end-start)))    
     sys.stdout.flush()
