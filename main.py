@@ -27,17 +27,17 @@ from functions import MyRotateTransform, MyDataset_Unl, MyDataset, cumulate_EMA,
 
 def get_kTop(pred_s, pred_w):
     pseudo_labels = F.softmax(pred_w, dim=-1)
-    print(pseudo_labels)
+    #print(pseudo_labels)
     softmax_pred = F.softmax(pred_s, dim=-1)
     _, targets = torch.max(pseudo_labels, dim=1)
     targets = targets.unsqueeze(-1)
-    print(targets)
+    #print(targets)
     sorted_idx = torch.argsort(softmax_pred, descending=True, dim=1)
-    print(sorted_idx)
+    #print(sorted_idx)
     mask = sorted_idx.eq(targets).float()
-    print(mask)
+    #print(mask)
     mask = mask.sum(dim=0).cpu().detach().numpy()
-    print(mask)
+    #print(mask)
     idx = np.arange(mask.shape[0])
     idx = idx[::-1]
     for i in idx:
@@ -185,7 +185,7 @@ sys.stdout.flush()
 n_classes = len(np.unique(source_label))
 
 
-train_batch_size = 16#512#1024#512
+train_batch_size = 128#16#512#1024#512
 
 source_data, source_label = shuffle(source_data, source_label)
 train_target_data, train_target_label = shuffle(train_target_data, train_target_label)
@@ -287,9 +287,11 @@ th_pseudo_label = .95
 
 den_entro = torch.log2(torch.tensor(n_classes, dtype=torch.float32) )
 
+
 for epoch in range(epochs):
     start = time.time()
     model.train()
+    history_k = []
     tot_loss = 0.0
     tot_ortho_loss = 0.0
     tot_fixmatch_loss = 0.0
@@ -413,10 +415,12 @@ for epoch in range(epochs):
         ###### NEGATIVE LOSS ######
         #k = 3#n_classes//2
         k = get_kTop(pred_unl_target_strong.detach(), pred_unl_target.detach())
-        print("k %d"%k)
-        print("=========================")
-        k = min(k, n_classes//2)
-        neg_learn_loss = nl_loss(pred_unl_target_strong, pred_unl_target.detach(), k , device)
+        #k = min(k, n_classes//2)
+        history_k.append(k)
+        if k == n_classes:
+            neg_learn_loss = torch.tensor(0)
+        else:
+            neg_learn_loss = nl_loss(pred_unl_target_strong, pred_unl_target.detach(), k , device)
         ###########################
         
         #loss = loss_pred + loss_dom + mixdl_loss_supContraLoss + 0.00001 * l2_reg + loss_ortho #+ loss_consistency
@@ -462,6 +466,7 @@ for epoch in range(epochs):
     ####################### EMA #####################################
     
     print("TRAIN LOSS at Epoch %d: WITH TOTAL LOSS %.4f acc on TEST TARGET SET (ORIG) %.2f (EMA) %.2f with train time %d"%(epoch, tot_loss/den, 100*f1_val, 100*f1_val_ema, (end-start)))    
+    print("history K", np.bincount(history_k))
     sys.stdout.flush()
     
 
