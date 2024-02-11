@@ -11,7 +11,7 @@ LEARNING_RATE = 0.0001
 MOMENTUM_EMA = .95
 EPOCHS = 300
 TH_FIXMATCH = .95
-
+WARM_UP_EPOCH_EMA = 50
 
 class MyRotateTransform():
     def __init__(self, angles: Sequence[int]):

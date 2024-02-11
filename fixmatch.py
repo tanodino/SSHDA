@@ -18,7 +18,7 @@ from functions import MyRotateTransform, MyDataset_Unl, MyDataset
 import torchvision.transforms as T 
 import torch.nn.functional as F
 import torchvision.transforms.functional as TF
-from functions import cumulate_EMA, transform, TRAIN_BATCH_SIZE, LEARNING_RATE, MOMENTUM_EMA, EPOCHS, TH_FIXMATCH
+from functions import cumulate_EMA, transform, TRAIN_BATCH_SIZE, LEARNING_RATE, MOMENTUM_EMA, EPOCHS, TH_FIXMATCH, WARM_UP_EPOCH_EMA
 #import functions
 import os
 
@@ -176,7 +176,7 @@ for epoch in range(EPOCHS):
 
     ####################### EMA #####################################
     f1_val_ema = 0
-    if epoch >= 50:
+    if epoch >= WARM_UP_EPOCH_EMA:
         ema_weights = cumulate_EMA(model, ema_weights, MOMENTUM_EMA)
         current_state_dict = model.state_dict()
         model.load_state_dict(ema_weights)
