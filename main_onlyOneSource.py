@@ -14,6 +14,8 @@ from sklearn.metrics import f1_score
 from torchvision.models import resnet18
 from sklearn.model_selection import train_test_split
 from torchvision.models import convnext_tiny
+from functions import cumulate_EMA, transform, TRAIN_BATCH_SIZE, LEARNING_RATE, MOMENTUM_EMA, EPOCHS, TH_FIXMATCH, WARM_UP_EPOCH_EMA
+import os
 
 
 def evaluation(model, dataloader, device):
@@ -59,27 +61,24 @@ test_label = train_label[test_idx]
 train_data = train_data[train_idx]
 train_label = train_label[train_idx]
 
-print("train_data.shape ",train_data.shape)
-train_data, train_label = dataAugRotate(train_data, train_label, (1,2))
-print("train_data.shape ",train_data.shape)
 
 n_classes = len(np.unique(train_label))
-train_batch_size = 512#1024#512
 
 train_data, train_label = shuffle(train_data, train_label)
 
 #DATALOADER TRAIN
 x_train = torch.tensor(train_data, dtype=torch.float32)
 y_train = torch.tensor(train_label, dtype=torch.int64)
+
 dataset_train = TensorDataset(x_train, y_train)
-dataloader_train = DataLoader(dataset_train, shuffle=True, batch_size=train_batch_size)
+dataloader_train = DataLoader(dataset_train, shuffle=True, batch_size=TRAIN_BATCH_SIZE)
 
 
 #DATALOADER TEST
 x_test = torch.tensor(test_data, dtype=torch.float32)
 y_test = torch.tensor(test_label, dtype=torch.int64)
 dataset_test = TensorDataset(x_test, y_test)
-dataloader_test = DataLoader(dataset_test, shuffle=True, batch_size=train_batch_size)
+dataloader_test = DataLoader(dataset_test, shuffle=True, batch_size=TRAIN_BATCH_SIZE)
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 

@@ -73,9 +73,9 @@ train_label = label[train_idx]
 
 
 
-print("train_data.shape ",train_data.shape)
-train_data, train_label = dataAugRotate(train_data, train_label, (1,2))
-print("train_data.shape ",train_data.shape)
+#print("train_data.shape ",train_data.shape)
+#train_data, train_label = dataAugRotate(train_data, train_label, (1,2))
+#print("train_data.shape ",train_data.shape)
 
 n_classes = len(np.unique(train_label))
 #train_batch_size = 512#1024#512
