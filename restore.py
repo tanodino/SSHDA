@@ -63,4 +63,4 @@ for nsplit in range(nsplits):
     f1_val = f1_score(labels, pred, average="weighted")
     acc_f1.append(f1_val)
 
-print("F1 %.2f +- %.2f"%(np.mean(acc_f1), np.std(acc_f1) ))
+print("F1 %.2f +- %.2f"%(np.mean(acc_f1)*100, np.std(acc_f1)*100 ))
