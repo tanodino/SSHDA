@@ -25,6 +25,20 @@ import torchcontrib
 from collections import OrderedDict
 from functions import MyRotateTransform, MyDataset_Unl, MyDataset, cumulate_EMA, modify_weights
 
+def get_kTop(pred_s, pred_w):
+    pseudo_labels = F.softmax(pred_w, dim=-1)
+    softmax_pred = F.softmax(pred_s, dim=-1)
+    _, targets = torch.max(pseudo_labels, dim=1)
+    targets = targets.unsqueeze(-1)
+    sorted_idx = torch.argsort(softmax_pred, descending=True, dim=1)
+    mask = sorted_idx.eq(targets).float()
+    mask = mask.sum(dim=0).cpu().detach().numpy()
+    idx = np.arange(mask.shape[0])
+    idx = idx[::-1]
+    for i in idx:
+        if mask[i] != 0:
+            return i + 1
+
 
 def to_onehot(labels, n_categories, device, dtype=torch.float32):
     batch_size = labels.shape[0]
@@ -392,7 +406,10 @@ for epoch in range(epochs):
         ##### FIXMATCH ###############
         
         ###### NEGATIVE LOSS ######
-        k = 3#n_classes//2 
+        #k = 3#n_classes//2
+        k = get_kTop(pred_unl_target_strong.detach(), pred_unl_target.detach())
+        print("k %d"%k)
+        k = min(k, n_classes//2)
         neg_learn_loss = nl_loss(pred_unl_target_strong, pred_unl_target.detach(), k , device)
         ###########################
         
