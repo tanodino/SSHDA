@@ -27,12 +27,17 @@ from functions import MyRotateTransform, MyDataset_Unl, MyDataset, cumulate_EMA,
 
 def get_kTop(pred_s, pred_w):
     pseudo_labels = F.softmax(pred_w, dim=-1)
+    print(pseudo_labels)
     softmax_pred = F.softmax(pred_s, dim=-1)
     _, targets = torch.max(pseudo_labels, dim=1)
     targets = targets.unsqueeze(-1)
     sorted_idx = torch.argsort(softmax_pred, descending=True, dim=1)
+    print(sorted_idx)
     mask = sorted_idx.eq(targets).float()
+    print(mask)
     mask = mask.sum(dim=0).cpu().detach().numpy()
+    print(mask)
+    exit()
     idx = np.arange(mask.shape[0])
     idx = idx[::-1]
     for i in idx:
@@ -180,7 +185,7 @@ sys.stdout.flush()
 n_classes = len(np.unique(source_label))
 
 
-train_batch_size = 512#1024#512
+train_batch_size = 16#512#1024#512
 
 source_data, source_label = shuffle(source_data, source_label)
 train_target_data, train_target_label = shuffle(train_target_data, train_target_label)
