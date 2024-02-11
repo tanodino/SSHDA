@@ -414,7 +414,7 @@ for epoch in range(epochs):
         #k = 3#n_classes//2
         k = get_kTop(pred_unl_target_strong.detach(), pred_unl_target.detach())
         print("k %d"%k)
-        exit()
+        print("=========================")
         k = min(k, n_classes//2)
         neg_learn_loss = nl_loss(pred_unl_target_strong, pred_unl_target.detach(), k , device)
         ###########################
