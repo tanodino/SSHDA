@@ -23,23 +23,19 @@ import torch.nn.functional as F
 import random
 import torchcontrib
 from collections import OrderedDict
-from functions import MyRotateTransform, MyDataset_Unl, MyDataset, cumulate_EMA, modify_weights
+from functions import MyRotateTransform, MyDataset_Unl, MyDataset, cumulate_EMA, modify_weights, transform, TRAIN_BATCH_SIZE, LEARNING_RATE, MOMENTUM_EMA, EPOCHS, TH_FIXMATCH, WARM_UP_EPOCH_EMA
 import functions
+import os
 
 
 def get_kTop(pred_s, pred_w):
     pseudo_labels = F.softmax(pred_w, dim=-1)
-    #print(pseudo_labels)
     softmax_pred = F.softmax(pred_s, dim=-1)
     _, targets = torch.max(pseudo_labels, dim=1)
     targets = targets.unsqueeze(-1)
-    #print(targets)
     sorted_idx = torch.argsort(softmax_pred, descending=True, dim=1)
-    #print(sorted_idx)
     mask = sorted_idx.eq(targets).float()
-    #print(mask)
     mask = mask.sum(dim=0).cpu().detach().numpy()
-    #print(mask)
     idx = np.arange(mask.shape[0])
     idx = idx[::-1]
     for i in idx:
@@ -63,14 +59,6 @@ def nl_loss(pred_s, pred_w, k, device):
     mask_k_npl = mask_k_npl.to(device)
     loss_npl = (-torch.log(1-softmax_pred+1e-10) * mask_k_npl).sum(dim=1).mean()
     return loss_npl
-
-def retrieveModelWeights(model):
-    ##### REASONING FLAT MINIMA #####
-    state_dict = model.state_dict()
-    to_save = OrderedDict()
-    for k in state_dict:
-        to_save[k] = state_dict[k].cpu().detach().numpy()
-    return to_save
 
 
 
@@ -124,23 +112,8 @@ def evaluation(model, dataloader, device):
     tot_labels = np.concatenate(tot_labels)
     return tot_pred, tot_labels
 
-def rescale(data):
-    min_ = np.percentile(data,2)
-    max_ = np.percentile(data,98)
-    return np.clip( (data - min_) / (max_ - min_), 0, 1.)
 
-
-def dataAugRotate(data, labels, axis):
-    new_data = []
-    new_label = []
-    for idx, el in enumerate(data):
-        for k in range(4):
-            new_data.append( np.rot90(el, k, axis) )
-            new_label.append( labels[idx] )
-    return np.array(new_data), np.array(new_label)
-
-
-dir = sys.argv[1]
+dir_ = sys.argv[1]
 source_prefix = sys.argv[2]
 target_prefix = sys.argv[3]
 nsamples = sys.argv[4]
@@ -157,7 +130,7 @@ print("target_data ",target_data.shape)
 print("source_label ",source_label.shape)
 print("target_label ",target_label.shape)
 sys.stdout.flush()
-train_target_idx = np.load("%s/%s_%s_%s_train_idx.npy"%(dir, target_prefix, nsplit, nsamples))
+train_target_idx = np.load("%s/%s_%s_%s_train_idx.npy"%(dir_, target_prefix, nsplit, nsamples))
 test_target_idx = np.setdiff1d(np.arange(target_data.shape[0]), train_target_idx)
 
 
@@ -175,25 +148,11 @@ print("TRAININg ID SELECTED")
 print("train_target_data ",train_target_data.shape)
 print("train_target_label ",train_target_label.shape)
 sys.stdout.flush()
-#source_data, source_label = dataAugRotate(source_data, source_label, (1,2))
-#train_target_data, train_target_label = dataAugRotate(train_target_data, train_target_label, (1,2))
 
-print("AFTER DATA AUGMENTATION")
-print("source_data ",source_data.shape)
-print("train_target_data ",train_target_data.shape)
-print("source_label ",source_label.shape)
-print("train_target_label ",train_target_label.shape)
-sys.stdout.flush()
 n_classes = len(np.unique(source_label))
-
-
-#train_batch_size = 128#16#512#1024#512
 
 source_data, source_label = shuffle(source_data, source_label)
 train_target_data, train_target_label = shuffle(train_target_data, train_target_label)
-
-#source_data = source_data[0:50000]
-#source_label = source_label[0:50000]
 
 
 #DATALOADER SOURCE
@@ -201,40 +160,21 @@ x_train_source = torch.tensor(source_data, dtype=torch.float32)
 y_train_source = torch.tensor(source_label, dtype=torch.int64)
 
 #dataset_source = TensorDataset(x_train_source, y_train_source)
-angle = [0, 90, 180, 270]
-transform_source = T.Compose([
-    T.RandomHorizontalFlip(),
-    T.RandomVerticalFlip(),
-    T.RandomApply([MyRotateTransform(angles=angle)], p=0.5)
-    ])
-dataset_source = MyDataset(x_train_source, y_train_source, transform=transform_source)
+dataset_source = MyDataset(x_train_source, y_train_source, transform=transform)
 dataloader_source = DataLoader(dataset_source, shuffle=True, batch_size=TRAIN_BATCH_SIZE)
 
 #DATALOADER TARGET TRAIN
 x_train_target = torch.tensor(train_target_data, dtype=torch.float32)
 y_train_target = torch.tensor(train_target_label, dtype=torch.int64)
 
-transform_target = T.Compose([
-    T.RandomHorizontalFlip(),
-    T.RandomVerticalFlip(),
-    T.RandomApply([MyRotateTransform(angles=angle)], p=0.5)
-    ])
 
-#dataset_train_target = TensorDataset(x_train_target, y_train_target)
-dataset_train_target = MyDataset(x_train_target, y_train_target, transform=transform_target)
+dataset_train_target = MyDataset(x_train_target, y_train_target, transform=transform)
 dataloader_train_target = DataLoader(dataset_train_target, shuffle=True, batch_size=TRAIN_BATCH_SIZE)
 
 #DATALOADER TARGET UNLABELLED
 x_train_target_unl = torch.tensor(test_target_data_unl, dtype=torch.float32)
 
-transform_target_unl = T.Compose([
-    T.RandomHorizontalFlip(),
-    T.RandomVerticalFlip(),
-    T.RandomApply([MyRotateTransform(angles=angle)], p=0.5),
-    T.RandomApply([T.ColorJitter()], p=0.5)
-    ])
-
-dataset_train_target_unl = MyDataset_Unl(x_train_target_unl, transform_target_unl)
+dataset_train_target_unl = MyDataset_Unl(x_train_target_unl, transform)
 dataloader_train_target_unl = DataLoader(dataset_train_target_unl, shuffle=True, batch_size=TRAIN_BATCH_SIZE)
 
 #DATALOADER TARGET TEST
@@ -245,52 +185,27 @@ dataloader_test_target = DataLoader(dataset_test_target, shuffle=False, batch_si
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-'''
-model = resnet18(weights=None)
-#model = convnext_tiny(weights=None)
-model.conv1 = nn.Conv2d(train_data.shape[1], 64, kernel_size=7, stride=2, padding=3,bias=False)
-model._modules["fc"]  = nn.Linear(in_features=512, out_features=len(np.unique(train_label)) )
-'''
-#x_opt, x_sar = x
-#The forward method of the ORDisModel class takes as input a pair of optical and sar data
-#more precisely, we adopt a training strategy in which we have a balanced number of optical and sar samples for each batch
-model = None
-
 print("source_data.shape[1] ",source_data.shape[1])
 print("target_data.shape[1] ",target_data.shape[1])
 sys.stdout.flush()
 model = ORDisModel(input_channel_source=source_data.shape[1], input_channel_target=target_data.shape[1], num_classes=n_classes)
 model = model.to(device)
 
-#decay = 0.999
-#ema_model = AveragedModel(model, multi_avg_fn=get_ema_multi_avg_fn(decay))
-#ema_model = AveragedModel(model)
 
-
-
-learning_rate = 0.0001
 loss_fn = nn.CrossEntropyLoss()
 loss_fn_noReduction = nn.CrossEntropyLoss(reduction='none')
-optimizer = torch.optim.Adam(params=model.parameters(), lr=learning_rate)
-#optimizer = torchcontrib.optim.SWA(base_optimizer)
-scl = SupervisedContrastiveLoss()
+optimizer = torch.optim.AdamW(params=model.parameters(), lr=LEARNING_RATE)
+#scl = SupervisedContrastiveLoss()
 
 
-epochs = 300
+
 # Loop through the data
 valid_f1 = 0.0
-margin = .3
-decreasing_coeff = 0.95
 i = 0
 model_weights = []
 ema_weights = None
-momentum_ema = .95
-th_pseudo_label = .95
 
-den_entro = torch.log2(torch.tensor(n_classes, dtype=torch.float32) )
-
-
-for epoch in range(epochs):
+for epoch in range(EPOCHS):
     start = time.time()
     model.train()
     history_k = []
@@ -299,7 +214,6 @@ for epoch in range(epochs):
     tot_fixmatch_loss = 0.0
     den = 0
     for x_batch_source, y_batch_source in dataloader_source:
-        #print("ciao")
         optimizer.zero_grad()
         x_batch_target, y_batch_target = next(iter(dataloader_train_target))
 
@@ -326,64 +240,15 @@ for epoch in range(epochs):
         inv_emb = torch.cat([emb_source_inv, emb_target_inv])
         spec_emb = torch.cat([emb_source_spec, emb_target_spec])
 
+        '''
         y_inv_labels = np.concatenate([y_batch_source.cpu().detach().numpy(), y_batch_target.cpu().detach().numpy()],axis=0)
-
         mixdl_loss_supContraLoss = sim_dist_specifc_loss_spc(inv_emb, y_inv_labels, np.zeros_like(y_inv_labels), scl, epoch)
-        
+        '''
         norm_inv_emb = nn.functional.normalize(inv_emb)
         norm_spec_emb = nn.functional.normalize(spec_emb)
         loss_ortho = torch.sum( norm_inv_emb * norm_spec_emb, dim=1)
-        #loss_ortho = torch.maximum( loss_ortho - margin, torch.tensor(0) )
         loss_ortho = torch.mean(loss_ortho)
-        l2_reg = sum(p.pow(2).sum() for p in model.parameters())
         
-        ########### PSEUDO LABELS ###########################
-        '''
-        _, _, _, pred_unl_target = model.forward_source(x_batch_target_unl, 1)
-        pred_unl_target = torch.softmax(pred_unl_target, dim=1)
-        entro = - torch.sum( pred_unl_target * torch.log2(pred_unl_target), dim=1)
-        norm_inv_entropy = 1.-torch.div(entro, den_entro )
-        
-        ind_var = (norm_inv_entropy.cpu().detach().numpy() > th_pseudo_label).astype("int")
-        ind_var = torch.tensor(ind_var).to(device)
-        #entro_regularizer = torch.mean(ind_var * norm_inv_entropy)
-        num_entro_reg = torch.sum(ind_var * norm_inv_entropy)
-        entro_regularizer = torch.div(num_entro_reg, torch.sum(ind_var)+torch.finfo(torch.float32).eps)
-        #entro_regularizer = torch.mean(ind_var * norm_inv_entropy)
-        '''
-
-        ########## CONSISTENCY LOSS ##########
-        '''
-        #emb_unl_target, _, _, pred_unl_target = model.forward_source(x_batch_target_unl, 1)
-        _, _, _, pred_unl_target = model.forward_source(x_batch_target_unl, 1)
-        #emb_unl_target_aug, _, _, pred_unl_target_aug = model.forward_source(x_batch_target_unl_aug, 1)
-        _, _, _, pred_unl_target_aug = model.forward_source(x_batch_target_unl_aug, 1)
-        pred_unl_target = torch.softmax(pred_unl_target,dim=1).detach()
-        pred_unl_target_aug = torch.softmax(pred_unl_target_aug,dim=1)
-        
-        loss_consistency_pred = torch.mean( torch.sum( torch.abs(pred_unl_target - pred_unl_target_aug), dim=1) )
-        '''
-        ''' FIXMATCH '''
-        '''
-        pseudo_labels = torch.softmax(pred_unl_target,dim=1).cpu().detach().numpy()
-        max_value = np.amax(pseudo_labels, axis=1)
-        ind_var = (max_value > th_pseudo_label).astype("int")
-        ind_var = torch.tensor(ind_var).to(device)
-        pseudo_labels_tensor = torch.tensor(np.argmax(pseudo_labels,axis=1), dtype=torch.int64).to(device)
-        #print("pseudo_labels_tensor.shape ",pseudo_labels_tensor.shape)
-        loss_fix_match = torch.sum( ind_var * loss_fn_noReduction( pred_unl_target_aug,  pseudo_labels_tensor ) )
-        #print("loss_fix_match",loss_fix_match)
-        loss_fix_match = loss_fix_match / ( torch.sum(ind_var) + torch.finfo(torch.float32).eps )
-        #print("loss_fix_match",loss_fix_match)
-        '''
-        #norm_emb_unl_target = nn.functional.normalize(emb_unl_target)
-        #norm_emb_unl_target_aug = nn.functional.normalize(emb_unl_target_aug)
-        #loss_consistency_emb = torch.mean( 1 - torch.sum(norm_emb_unl_target * norm_emb_unl_target_aug, dim=1) )
-        
-
-        #loss_consistency = loss_consistency_pred #+ loss_consistency_emb
-        #loss_consistency = loss_fix_match #loss_consistency_pred
-        ########################################
 
         ##### FIXMATCH ###############
         model.target.train()
@@ -393,31 +258,34 @@ for epoch in range(epochs):
         with torch.no_grad():
             pseudo_labels = torch.softmax(pred_unl_target, dim=1)
             max_probs, targets_u = torch.max(pseudo_labels, dim=1)
-            mask = max_probs.ge(th_pseudo_label).float()
+            mask = max_probs.ge(TH_FIXMATCH).float()
 
         u_pred_loss = (F.cross_entropy(pred_unl_target_strong, targets_u, reduction="none") * mask).mean()
 
-        #unlabeled_loss_dom_aug = (F.cross_entropy(pred_unl_target_strong_dom, torch.ones(pred_unl_target_strong_dom.shape[0]).long().to(device), reduction="none") * mask).mean()
-        #unlabeled_loss_dom_orig = (F.cross_entropy(pred_unl_target_dom, torch.ones(pred_unl_target_dom.shape[0]).long().to(device), reduction="none") * mask).mean()
-        unlabeled_loss_dom_aug = (F.cross_entropy(pred_unl_target_strong_dom, torch.ones(pred_unl_target_strong_dom.shape[0]).long().to(device), reduction="none") ).mean()
-        unlabeled_loss_dom_orig = (F.cross_entropy(pred_unl_target_dom, torch.ones(pred_unl_target_dom.shape[0]).long().to(device), reduction="none") ).mean()
-        u_loss_dom = ( unlabeled_loss_dom_aug + unlabeled_loss_dom_orig) / 2
+        pred_unl_dom = torch.cat([pred_unl_target_strong_dom,pred_unl_target_dom],dim=0)
+        u_loss_dom = loss_fn(pred_unl_dom, torch.ones(pred_unl_dom.shape[0]).long().to(device))
 
+        #unlabeled_loss_dom_aug = (F.cross_entropy(pred_unl_target_strong_dom, torch.ones(pred_unl_target_strong_dom.shape[0]).long().to(device), reduction="none") ).mean()
+        #unlabeled_loss_dom_orig = (F.cross_entropy(pred_unl_target_dom, torch.ones(pred_unl_target_dom.shape[0]).long().to(device), reduction="none") ).mean()
+        #u_loss_dom = ( unlabeled_loss_dom_aug + unlabeled_loss_dom_orig) / 2
+
+        unl_inv = torch.cat([unl_target_inv,unl_target_aug_inv],dim=0)
+        unl_spec = torch.cat([unl_target_spec,unl_target_aug_spec],dim=0)
+        u_loss_ortho = torch.mean( torch.sum( unl_inv * unl_spec, dim=1) )
+
+        '''
         norm_unl_target_inv = F.normalize(unl_target_inv)
         norm_unl_target_spec = F.normalize(unl_target_spec)
         norm_unl_target_aug_inv = F.normalize(unl_target_aug_inv)
         norm_unl_target_aug_spec = F.normalize(unl_target_aug_spec)
         unlabeled_loss_ortho_orig = torch.mean( torch.sum( norm_unl_target_inv * norm_unl_target_spec, dim=1) )
         unlabeled_loss_ortho_aug = torch.mean( torch.sum( norm_unl_target_aug_inv * norm_unl_target_aug_spec, dim=1) )
-        #unlabeled_loss_ortho_orig = torch.mean( torch.sum( norm_unl_target_inv * norm_unl_target_spec, dim=1)  * mask )
-        #unlabeled_loss_ortho_aug = torch.mean( torch.sum( norm_unl_target_aug_inv * norm_unl_target_aug_spec, dim=1)  * mask )
         u_loss_ortho = (unlabeled_loss_ortho_orig + unlabeled_loss_ortho_aug) / 2
+        '''
         ##### FIXMATCH ###############
         
         ###### NEGATIVE LOSS ######
-        #k = 3#n_classes//2
-        k = get_kTop(pred_unl_target_strong.detach(), pred_unl_target.detach())
-        #k = min(k, n_classes//2)
+        k = get_kTop(pred_unl_target_strong.detach(), pred_unl_target.detach())        
         history_k.append(k)
         if k == n_classes:
             neg_learn_loss = torch.tensor(0)
@@ -425,32 +293,17 @@ for epoch in range(epochs):
             neg_learn_loss = nl_loss(pred_unl_target_strong, pred_unl_target.detach(), k , device)
         ###########################
         
-        #loss = loss_pred + loss_dom + mixdl_loss_supContraLoss + 0.00001 * l2_reg + loss_ortho #+ loss_consistency
-        #loss = loss_pred + loss_dom + mixdl_loss_supContraLoss + loss_ortho + unlabeled_loss#+ entro_regularizer#+ loss_consistency
-        loss = loss_pred + loss_dom + loss_ortho + u_pred_loss + u_loss_dom + u_loss_ortho + neg_learn_loss#+ mixdl_loss_supContraLoss#+ entro_regularizer#+ loss_consistency
+        loss = loss_pred + loss_dom + loss_ortho + u_pred_loss + u_loss_dom + u_loss_ortho + neg_learn_loss
         
         loss.backward() # backward pass: backpropagate the prediction loss
         optimizer.step() # gradient descent: adjust the parameters by the gradients collected in the backward pass
         
         tot_loss+= loss.cpu().detach().numpy()
         tot_ortho_loss+=loss_ortho.cpu().detach().numpy()
-        tot_fixmatch_loss = u_pred_loss#entro_regularizer#loss_consistency.cpu().detach().numpy()
+        tot_fixmatch_loss = u_pred_loss
         den+=1.
 
         #torch.cuda.empty_cache()
-    '''
-    if int(tot_ortho_loss/den * 1000) == 0:
-        previous_margin = margin
-        margin = margin * decreasing_coeff
-        print("\T\T\T MARGIN decreasing from %f to %f"%(previous_margin,margin))
-    '''    
-
-    #MANUAL IMPLEMENTAITON OF THE EMA OPERATION
-    '''
-    if epoch >= 50:
-        current_weights, ema_weights = modify_weights(model, ema_weights, momentum_ema)
-        model.load_state_dict(current_weights)
-    '''
 
     end = time.time()
     pred_valid, labels_valid = evaluation(model, dataloader_test_target, device)
@@ -458,8 +311,8 @@ for epoch in range(epochs):
     
     ####################### EMA #####################################
     f1_val_ema = 0
-    if epoch >= 50:
-        ema_weights = cumulate_EMA(model, ema_weights, momentum_ema)
+    if epoch >= WARM_UP_EPOCH_EMA:
+        ema_weights = cumulate_EMA(model, ema_weights, MOMENTUM_EMA)
         current_state_dict = model.state_dict()
         model.load_state_dict(ema_weights)
         pred_valid, labels_valid = evaluation(model, dataloader_test_target, device)
@@ -470,14 +323,14 @@ for epoch in range(epochs):
     print("TRAIN LOSS at Epoch %d: WITH TOTAL LOSS %.4f acc on TEST TARGET SET (ORIG) %.2f (EMA) %.2f with train time %d"%(epoch, tot_loss/den, 100*f1_val, 100*f1_val_ema, (end-start)))    
     print("history K", np.bincount(history_k))
     sys.stdout.flush()
-    
 
+dir_name = dir_+"/OUR"
+if not os.path.exists(dir_name):
+    os.mkdir(dir_name)
 
-update_bn(dataloader_source, dataloader_train_target, model)
-pred_valid, labels_valid = evaluation(model, dataloader_test_target, device)
-f1_val = f1_score(labels_valid, pred_valid, average="weighted")
-print("-> -> -> -> FINAL PERF AFTER BN STATISTICS UPDATE %f"%f1_val)
-
+output_file = dir_name+"/%s_%s_%s.pth"%(target_prefix, nsplit, nsamples)
+model.load_state_dict(ema_weights)
+torch.save(model.state_dict(), output_file)
 
 
 
