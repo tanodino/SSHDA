@@ -21,8 +21,8 @@ class ORDisModel(torch.nn.Module):
         target_model.conv1 = nn.Conv2d(input_channel_target, 64, kernel_size=7, stride=2, padding=3,bias=False)
         self.target = nn.Sequential(*list(target_model.children())[:-1])
 
-        self.domain_cl = FC_Classifier_NoLazy(emb_dim, 256, 2)        
-        self.task_cl = FC_Classifier_NoLazy(emb_dim, 256, num_classes)        
+        self.domain_cl = FC_Classifier_NoLazy(emb_dim, 2)        
+        self.task_cl = FC_Classifier_NoLazy(emb_dim, num_classes)        
 
     
     def forward_source(self, x, source):
@@ -175,15 +175,11 @@ class Conv1D_BatchNorm_Relu_Dropout(torch.nn.Module):
 
 
 class FC_Classifier_NoLazy(torch.nn.Module):
-    def __init__(self, input_dim, hidden_dims, n_classes, drop_probability=0.5):
+    def __init__(self, input_dim, n_classes):
         super(FC_Classifier_NoLazy, self).__init__()
 
         self.block = nn.Sequential(
-            nn.Linear(input_dim, hidden_dims),
-            nn.BatchNorm1d(hidden_dims),
-            nn.ReLU(),
-            nn.Dropout(p=drop_probability),
-            nn.Linear(hidden_dims,n_classes)
+            nn.Linear(input_dim,n_classes)
         )
     
     def forward(self, X):
