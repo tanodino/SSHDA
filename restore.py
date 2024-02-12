@@ -27,7 +27,7 @@ def evaluation(model, dataloader, device):
 dir_ = sys.argv[1]
 method = sys.argv[2]
 target_prefix = sys.argv[3]
-nsamples = sys.argv[4]
+#nsamples = sys.argv[4]
 #nsplit = sys.argv[5]
 nsplits = 5
 
@@ -43,24 +43,37 @@ model._modules["fc"]  = nn.Linear(in_features=512, out_features=n_classes )
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 model = model.to(device)
 
-acc_f1 = []
-for nsplit in range(nsplits):
-    train_idx = np.load("%s/%s_%s_%s_train_idx.npy"%(dir_, target_prefix, nsplit, nsamples))
-    test_idx = np.setdiff1d(np.arange(data.shape[0]), train_idx)
-    test_data = data[test_idx]
-    test_label = label[test_idx]
 
-    #DATALOADER TEST
-    x_test = torch.tensor(test_data, dtype=torch.float32)
-    y_test = torch.tensor(test_label, dtype=torch.int64)
-    dataset_test = TensorDataset(x_test, y_test)
-    dataloader_test = DataLoader(dataset_test, shuffle=False, batch_size=TRAIN_BATCH_SIZE)
+tot_mean = []
+tot_std = []
 
-    path = dir_+"/"+method+"/%s_%s_%s.pth"%(target_prefix, nsplit, nsamples)
-    model.load_state_dict(torch.load(path))
-    model.eval()
-    pred, labels = evaluation(model, dataloader_test, device)
-    f1_val = f1_score(labels, pred, average="weighted")
-    acc_f1.append(f1_val)
+for nsamples in np.arange(50,401,50):
+    acc_f1_nsample = []
+    for nsplit in range(nsplits):
+        train_idx = np.load("%s/%s_%s_%s_train_idx.npy"%(dir_, target_prefix, nsplit, nsamples))
+        test_idx = np.setdiff1d(np.arange(data.shape[0]), train_idx)
+        test_data = data[test_idx]
+        test_label = label[test_idx]
 
-print("F1 %.2f +- %.2f"%(np.mean(acc_f1)*100, np.std(acc_f1)*100 ))
+        #DATALOADER TEST
+        x_test = torch.tensor(test_data, dtype=torch.float32)
+        y_test = torch.tensor(test_label, dtype=torch.int64)
+        dataset_test = TensorDataset(x_test, y_test)
+        dataloader_test = DataLoader(dataset_test, shuffle=False, batch_size=TRAIN_BATCH_SIZE)
+
+        path = dir_+"/"+method+"/%s_%s_%s.pth"%(target_prefix, nsplit, nsamples)
+        model.load_state_dict(torch.load(path))
+        model.eval()
+        pred, labels = evaluation(model, dataloader_test, device)
+        f1_val = f1_score(labels, pred, average="weighted")
+        acc_f1_nsample.append(f1_val)
+
+    #print("F1 %.2f +- %.2f"%(np.mean(acc_f1)*100, np.std(acc_f1)*100 ))    
+    tot_mean.append( np.mean(acc_f1_nsample) )
+    tot_std.append( np.std(acc_f1_nsample) )
+
+st = []
+for i in range(len(tot_mean)):
+    st.append("%.2f $\pm$ %.2f"%(tot_mean[i]*100, tot_std[i]*100))
+
+print( " & ".join(st) )
