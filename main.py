@@ -296,7 +296,7 @@ for epoch in range(EPOCHS):
         
         tot_loss+= loss.cpu().detach().numpy()
         tot_ortho_loss+=loss_ortho.cpu().detach().numpy()
-        tot_fixmatch_loss = u_pred_loss
+        tot_fixmatch_loss+=u_pred_loss.cpu().detach().numpy()
         den+=1.
 
         #torch.cuda.empty_cache()
