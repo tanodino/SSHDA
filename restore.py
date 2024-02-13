@@ -7,6 +7,7 @@ from model_pytorch import ORDisModel
 from torchvision.models import resnet18
 from sklearn.metrics import f1_score
 from functions import TRAIN_BATCH_SIZE
+import os
 
 def evaluation(model, dataloader, device):
     model.eval()
@@ -50,6 +51,11 @@ tot_std = []
 for nsamples in np.arange(50,401,50):
     acc_f1_nsample = []
     for nsplit in range(nsplits):
+        
+        path = dir_+"/"+method+"/%s_%s_%s.pth"%(target_prefix, nsplit, nsamples)
+        if not os.path.exists(path):
+            continue
+
         train_idx = np.load("%s/%s_%s_%s_train_idx.npy"%(dir_, target_prefix, nsplit, nsamples))
         test_idx = np.setdiff1d(np.arange(data.shape[0]), train_idx)
         test_data = data[test_idx]
@@ -61,7 +67,7 @@ for nsamples in np.arange(50,401,50):
         dataset_test = TensorDataset(x_test, y_test)
         dataloader_test = DataLoader(dataset_test, shuffle=False, batch_size=TRAIN_BATCH_SIZE)
 
-        path = dir_+"/"+method+"/%s_%s_%s.pth"%(target_prefix, nsplit, nsamples)
+        
         model.load_state_dict(torch.load(path))
         model.eval()
         pred, labels = evaluation(model, dataloader_test, device)
