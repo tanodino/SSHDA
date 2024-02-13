@@ -21,6 +21,7 @@ def getNewTrainIdx(labels, train_idx, val):
 
 
 dir_name = sys.argv[1]
+prefix_source = sys.argv[2]
 #MS_1_300_train_idx.npy
 query_string = "_50_"
 val = 25
@@ -28,8 +29,7 @@ substitute_string = "_%d_"%val
 
 fileNames = glob.glob("%s/*%s*py"%(dir_name,query_string))
 for fName in fileNames:
-    prefix = fName.split("_")[0]
-    labels = np.load("%s/%s_label_filtered.npy"%(dir_name,prefix))
+    labels = np.load("%s/%s_label_filtered.npy"%(dir_name,prefix_source))
     train_idx = np.load(fName)
     newTrainIdx = getNewTrainIdx(labels, train_idx, val)
     newFileName = fName.replace(query_string, substitute_string)
