@@ -10,7 +10,7 @@ def getNewTrainIdx(labels, train_idx, val):
     for l in np.unique(labels):
         hashMap[l] = []
     for v in train_idx:
-        hashMap[labels[i]].append(v)
+        hashMap[labels[v]].append(v)
     for l in hashMap.keys():
         temp = shuffle( hashMap[l] )
         newTrainIdx.append( temp[0:val] )
