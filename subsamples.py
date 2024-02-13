@@ -36,4 +36,4 @@ for fName in fileNames:
     print(newFileName)
     print(newTrainIdx.shape)
     print("============")
-    #np.save(newFileName, newTrainIdx)
+    np.save(newFileName, newTrainIdx)
