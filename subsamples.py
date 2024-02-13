@@ -27,7 +27,7 @@ query_string = "_50_"
 val = 25
 substitute_string = "_%d_"%val
 
-fileNames = glob.glob("%s/*%s*py"%(dir_name,query_string))
+fileNames = glob.glob("%s/%s*%s*py"%(dir_name,prefix_source,query_string))
 for fName in fileNames:
     labels = np.load("%s/%s_label_filtered.npy"%(dir_name,prefix_source))
     train_idx = np.load(fName)
