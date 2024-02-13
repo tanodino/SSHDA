@@ -33,6 +33,7 @@ for fName in fileNames:
     train_idx = np.load(fName)
     newTrainIdx = getNewTrainIdx(labels, train_idx, val)
     newFileName = fName.replace(query_string, substitute_string)
+    print(newFileName)
     print(newTrainIdx.shape)
     print("============")
     #np.save(newFileName, newTrainIdx)
