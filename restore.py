@@ -48,7 +48,7 @@ model = model.to(device)
 tot_mean = []
 tot_std = []
 
-for nsamples in np.arange(50,401,50):
+for nsamples in [25, 50, 100, 200]:
     acc_f1_nsample = []
     for nsplit in range(nsplits):
         
