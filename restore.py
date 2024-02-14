@@ -68,7 +68,7 @@ for nsamples in [25, 50, 100, 200]:
         dataloader_test = DataLoader(dataset_test, shuffle=False, batch_size=TRAIN_BATCH_SIZE)
 
         
-        model.load_state_dict(torch.load(path))
+        model.load_state_dict(torch.load(path,map_location=torch.device(device)))
         model.eval()
         pred, labels = evaluation(model, dataloader_test, device)
         f1_val = f1_score(labels, pred, average="weighted")
