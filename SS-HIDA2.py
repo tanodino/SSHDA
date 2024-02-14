@@ -191,8 +191,8 @@ critic = nn.Sequential(
 ).to(device)
 
 clf_criterion = nn.CrossEntropyLoss()
-critic_optim = torch.optim.Adam(critic.parameters(), lr=LR_DC)
-clf_optim = torch.optim.Adam(model.parameters(), lr=LR, weight_decay=WEIGHT_DECAY) 
+critic_optim = torch.optim.AdamW(critic.parameters(), lr=LR_DC)
+clf_optim = torch.optim.AdamW(model.parameters(), lr=LR, weight_decay=WEIGHT_DECAY) 
 
 
 # Loop through the data
