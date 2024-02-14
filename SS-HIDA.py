@@ -61,7 +61,6 @@ class GradReverse(torch.autograd.Function):
     def forward(ctx, x, alpha):
         ctx.alpha = alpha
         return x.view_as(x)
-        #print(alpha)
     @staticmethod
     def backward(ctx, grad_output):
         output = grad_output * -ctx.alpha
@@ -165,7 +164,7 @@ test_target_data_unl = target_data[test_target_idx]
 
 
 
-print("TRAININg ID SELECTED")
+print("TRAINING ID SELECTED")
 print("train_target_data ",train_target_data.shape)
 print("train_target_label ",train_target_label.shape)
 sys.stdout.flush()
@@ -277,19 +276,11 @@ for epoch in range(EPOCHS):
         # dc_slopes = torch.sqrt(torch.sum(dc_grad**2, dim=1))
         # dc_grad_penalty = torch.mean((dc_slopes - 1.0)**2)
         dc_slopes = dc_grad.norm(2, dim=1)
-        dc_grad_penalty = ((dc_slopes - 1)**2).mean()        
-        if torch.isnan(dc_grad_penalty):
-            print('dc_grad_penalty is NaN!!!')
-            print(dc_slopes)
-            exit()        
+        dc_grad_penalty = ((dc_slopes - 1)**2).mean()              
         # wasserstein estimate
         wd_loss = torch.mean(dom_crit_source) - torch.mean(dom_crit_target_all)
         # total domain-critic
         dc_loss = - wd_loss + GP_PARAM*dc_grad_penalty
-
-        if torch.isnan(dc_loss):
-            print('dc_loss is NaN!!!')
-            exit()
 
         # Final loss
         loss = loss_pred + DC_PARAM*dc_loss
