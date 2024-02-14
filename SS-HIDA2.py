@@ -132,9 +132,6 @@ train_target_label = target_label[train_target_idx]
 test_target_data = target_data[test_target_idx]
 test_target_label = target_label[test_target_idx]
 
-test_target_data_unl = target_data[test_target_idx]
-
-
 
 print("TRAINING ID SELECTED")
 print("train_target_data ",train_target_data.shape)
@@ -164,7 +161,7 @@ dataset_train_target = MyDataset(x_train_target, y_train_target, transform=trans
 dataloader_train_target = DataLoader(dataset_train_target, shuffle=True, batch_size=TRAIN_BATCH_SIZE//2)
 
 #DATALOADER TARGET UNLABELLED
-x_train_target_unl = torch.tensor(test_target_data_unl, dtype=torch.float32)
+x_train_target_unl = torch.tensor(test_target_data, dtype=torch.float32)
 
 dataset_train_target_unl = MyDataset_Unl(x_train_target_unl, transform)
 dataloader_train_target_unl = DataLoader(dataset_train_target_unl, shuffle=True, batch_size=TRAIN_BATCH_SIZE//2)
@@ -224,9 +221,9 @@ for epoch in range(EPOCHS):
         y_batch_target = y_batch_target.to(device)
 
         x_batch_target_unl = x_batch_target_unl.to(device)
-        # x_batch_target_unl_aug = x_batch_target_unl_aug.to(device) # unused
+        x_batch_target_unl_aug = x_batch_target_unl_aug.to(device) # unused
 
-        x_batch_target_all = torch.cat((x_batch_target,x_batch_target_unl_aug),dim=0)
+        x_batch_target_all = torch.cat((x_batch_target,x_batch_target_unl),dim=0).to(device)
 
         # Train critic
         set_requires_grad(model, requires_grad=False)
@@ -247,7 +244,6 @@ for epoch in range(EPOCHS):
             critic_cost.backward()
             critic_optim.step()
 
-            tot_dc_loss+=critic_cost.cpu().detach().numpy()
  
         # Train classifier
         set_requires_grad(model, requires_grad=True)
@@ -273,6 +269,7 @@ for epoch in range(EPOCHS):
             clf_optim.step()
 
         tot_loss+= loss.cpu().detach().numpy()
+        tot_dc_loss+= DC_PARAM * wasserstein_distance.cpu().detach().numpy()
         den+=1.
 
         #torch.cuda.empty_cache()
@@ -292,7 +289,7 @@ for epoch in range(EPOCHS):
         model.load_state_dict(current_state_dict)
     ####################### EMA #####################################
     
-    print("TRAIN LOSS at Epoch %d: WITH TOTAL LOSS %.4f (dc_loss %.4f). Acc on TEST TARGET SET (ORIG) %.2f (EMA) %.2f with train time %d"%(epoch, tot_loss/den, tot_dc_loss/den, 100*f1_val, 100*f1_val_ema, (end-start)))    
+    print("TRAIN LOSS at Epoch %d: WITH TOTAL LOSS %.4f (dc_loss %.4f). F1 on TEST TARGET SET (ORIG) %.2f (EMA) %.2f with train time %d"%(epoch, tot_loss/den, tot_dc_loss/den, 100*f1_val, 100*f1_val_ema, (end-start)))    
     sys.stdout.flush()
 
 dir_name = "./results/HIDA"
