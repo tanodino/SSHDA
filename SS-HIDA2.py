@@ -223,7 +223,7 @@ for epoch in range(EPOCHS):
         x_batch_target_unl = x_batch_target_unl.to(device)
         x_batch_target_unl_aug = x_batch_target_unl_aug.to(device) # unused
 
-        x_batch_target_all = torch.cat((x_batch_target,x_batch_target_unl),dim=0).to(device)
+        x_batch_target_all = torch.cat((x_batch_target,x_batch_target_unl_aug),dim=0).to(device)
 
         # Train critic
         set_requires_grad(model, requires_grad=False)
@@ -251,7 +251,7 @@ for epoch in range(EPOCHS):
         for _ in range(ITER_CLF):
             emb_s, pred_s = model(x_batch_source, from_source=True)
             emb_t, pred_t = model(x_batch_target)
-            emb_t_unl, _  = model(x_batch_target_unl)
+            emb_t_unl, _  = model(x_batch_target_unl_aug)
 
             # Classification loss
             pred = torch.cat((pred_s, pred_t),dim=0)
