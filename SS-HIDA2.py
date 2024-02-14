@@ -41,7 +41,7 @@ def evaluation(model, dataloader, device):
     for x_batch, y_batch in dataloader:
         x_batch = x_batch.to(device)
         y_batch = y_batch.to(device)
-        pred, _ = model(x_batch)
+        _, pred = model(x_batch)
         pred_npy = np.argmax(pred.cpu().detach().numpy(), axis=1)
         tot_pred.append( pred_npy )
         tot_labels.append( y_batch.cpu().detach().numpy())
