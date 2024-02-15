@@ -290,7 +290,9 @@ for epoch in range(EPOCHS):
             neg_learn_loss = nl_loss(pred_unl_target_strong, pred_unl_target.detach(), k , device)
         ###########################
         loss = None
-        if abla_number == 1:
+        if abla_number == 0:
+            loss = loss_pred
+        elif abla_number == 1:
             loss = loss_pred + loss_ortho + loss_dom
         elif abla_number == 2:
             loss = loss_pred + loss_ortho + loss_dom + u_loss_ortho + u_loss_dom + u_pred_loss 
