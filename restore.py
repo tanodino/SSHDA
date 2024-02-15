@@ -60,8 +60,8 @@ for nsamples in [25, 50, 100, 200]:
         test_idx = np.setdiff1d(np.arange(data.shape[0]), train_idx)
         test_data = data[test_idx]
         test_label = label[test_idx]
-        print(test_data.shape)
-        print(test_label.shape)
+        #print(test_data.shape)
+        #print(test_label.shape)
 
         #DATALOADER TEST
         x_test = torch.tensor(test_data, dtype=torch.float32)
