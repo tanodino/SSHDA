@@ -10,6 +10,7 @@ from functions import TRAIN_BATCH_SIZE
 import os
 from model_pytorch import ORDisModel
 
+#evaluation(model, dataloader_test_target, device, source_prefix)
 def evaluation(model, dataloader, device):
     model.eval()
     tot_pred = []
@@ -17,7 +18,8 @@ def evaluation(model, dataloader, device):
     for x_batch, y_batch in dataloader:
         x_batch = x_batch.to(device)
         y_batch = y_batch.to(device)
-        pred = model(x_batch)
+        pred = None
+        _, _ ,_, pred = model.forward_test_target(x_batch)
         pred_npy = np.argmax(pred.cpu().detach().numpy(), axis=1)
         tot_pred.append( pred_npy )
         tot_labels.append( y_batch.cpu().detach().numpy())
@@ -70,7 +72,7 @@ for nsplit in range(nsplits):
     y_test = torch.tensor(test_label, dtype=torch.int64)
     dataset_test = TensorDataset(x_test, y_test)
     dataloader_test = DataLoader(dataset_test, shuffle=False, batch_size=TRAIN_BATCH_SIZE)
-    
+
     model.load_state_dict(torch.load(path,map_location=torch.device(device)))
     model.eval()
     pred, labels = evaluation(model, dataloader_test, device)

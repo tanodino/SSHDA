@@ -7,7 +7,7 @@ from torch.utils.data import TensorDataset, DataLoader, Dataset
 import numpy as np
 from sklearn.utils import shuffle
 #from model_transformer import TransformerEncoder
-from model_pytorch import ORDisModel, SupervisedContrastiveLoss
+from model_pytorch import ORDisModel
 import time
 from sklearn.metrics import f1_score
 from torchvision.models import resnet18
