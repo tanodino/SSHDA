@@ -65,7 +65,7 @@ for nsplit in range(nsplits):
     train_idx = np.load("%s/%s_%s_%s_train_idx.npy"%(dir_, target_prefix, nsplit, nsamples))
     test_idx = np.setdiff1d(np.arange(target_data.shape[0]), train_idx)
     test_data = target_data[test_idx]
-    test_label = target_data[test_idx]
+    test_label = target_label[test_idx]
 
     #DATALOADER TEST
     x_test = torch.tensor(test_data, dtype=torch.float32)
