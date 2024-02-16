@@ -294,7 +294,7 @@ for epoch in range(EPOCHS):
 
 dir_name = "./results/HIDA"
 if not os.path.exists(dir_name):
-    os.mkdir(dir_name)
+    os.makedirs(dir_name)
 
 output_file = dir_name+"/%s_%s_%s.pth"%(target_prefix, nsplit, nsamples)
 model.load_state_dict(ema_weights)
