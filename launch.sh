@@ -6,5 +6,5 @@ do
     done
 done
 
-#sh launch.sh TreeSatAI AERIAL MS
+#sh launch.sh RESISC45_EuroSAT RESISC45 EURO
 #sh launch.sh EuroSAT_OPT_SAR MS SAR

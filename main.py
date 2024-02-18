@@ -258,38 +258,27 @@ for epoch in range(EPOCHS):
         pred_unl_dom = torch.cat([pred_unl_target_strong_dom,pred_unl_target_dom],dim=0)
         u_loss_dom = loss_fn(pred_unl_dom, torch.ones(pred_unl_dom.shape[0]).long().to(device))
 
-        #unlabeled_loss_dom_aug = (F.cross_entropy(pred_unl_target_strong_dom, torch.ones(pred_unl_target_strong_dom.shape[0]).long().to(device), reduction="none") ).mean()
-        #unlabeled_loss_dom_orig = (F.cross_entropy(pred_unl_target_dom, torch.ones(pred_unl_target_dom.shape[0]).long().to(device), reduction="none") ).mean()
-        #u_loss_dom = ( unlabeled_loss_dom_aug + unlabeled_loss_dom_orig) / 2
-
         unl_inv = torch.cat([unl_target_inv,unl_target_aug_inv],dim=0)
         norm_unl_inv = F.normalize(unl_inv)
         unl_spec = torch.cat([unl_target_spec,unl_target_aug_spec],dim=0)
         norm_unl_spec = F.normalize(unl_spec)
         u_loss_ortho = torch.mean( torch.sum( norm_unl_inv * norm_unl_spec, dim=1) )
 
-        '''
-        norm_unl_target_inv = F.normalize(unl_target_inv)
-        norm_unl_target_spec = F.normalize(unl_target_spec)
-        norm_unl_target_aug_inv = F.normalize(unl_target_aug_inv)
-        norm_unl_target_aug_spec = F.normalize(unl_target_aug_spec)
-        unlabeled_loss_ortho_orig = torch.mean( torch.sum( norm_unl_target_inv * norm_unl_target_spec, dim=1) )
-        unlabeled_loss_ortho_aug = torch.mean( torch.sum( norm_unl_target_aug_inv * norm_unl_target_aug_spec, dim=1) )
-        u_loss_ortho = (unlabeled_loss_ortho_orig + unlabeled_loss_ortho_aug) / 2
-        '''
         ##### FIXMATCH ###############
         
         ## BoostingSemi-SupervisedLearningbyExploitingAllUnlabeledData ##
         ###### NEGATIVE LOSS ######
+        '''
         k = get_kTop(pred_unl_target_strong.detach(), pred_unl_target.detach())        
         history_k.append(k)
         if k == n_classes:
             neg_learn_loss = torch.tensor(0)
         else:
             neg_learn_loss = nl_loss(pred_unl_target_strong, pred_unl_target.detach(), k , device)
+        '''
         ###########################
         
-        loss = loss_pred + loss_dom + loss_ortho + u_pred_loss + u_loss_dom + u_loss_ortho + neg_learn_loss
+        loss = loss_pred + loss_dom + loss_ortho + u_pred_loss + u_loss_dom + u_loss_ortho #+ neg_learn_loss
         
         loss.backward() # backward pass: backpropagate the prediction loss
         optimizer.step() # gradient descent: adjust the parameters by the gradients collected in the backward pass
