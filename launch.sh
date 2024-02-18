@@ -7,4 +7,6 @@ do
 done
 
 #sh launch.sh RESISC45_EuroSAT RESISC45 EURO
+#sh launch.sh RESISC45_EuroSAT EURO RESISC45
 #sh launch.sh EuroSAT_OPT_SAR MS SAR
+#sh launch.sh EuroSAT_OPT_SAR SAR MS
