@@ -32,7 +32,7 @@ dir_ = sys.argv[1]
 source_prefix = sys.argv[2]
 target_prefix = sys.argv[3]
 #abla_id = int(sys.argv[5])
-nsamples = sys.argv[4]
+#nsamples = sys.argv[4]
 #nsplit = sys.argv[5]
 nsplits = 5
 
