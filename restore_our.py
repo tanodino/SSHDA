@@ -58,6 +58,7 @@ for nsamples in [25,50,100,200]:
     for nsplit in range(nsplits):
         
         path = dir_+"/OUR/%s_%s_%s.pth"%(target_prefix, nsplit, nsamples)
+        print(path)
         if not os.path.exists(path):
             continue
 
