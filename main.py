@@ -232,7 +232,7 @@ for epoch in range(EPOCHS):
         
         inv_emb = torch.cat([emb_source_inv, emb_target_inv])
         spec_emb = torch.cat([emb_source_spec, emb_target_spec])
-
+        
         '''
         y_inv_labels = np.concatenate([y_batch_source.cpu().detach().numpy(), y_batch_target.cpu().detach().numpy()],axis=0)
         mixdl_loss_supContraLoss = sim_dist_specifc_loss_spc(inv_emb, y_inv_labels, np.zeros_like(y_inv_labels), scl, epoch)
