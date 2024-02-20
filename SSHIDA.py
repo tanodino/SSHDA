@@ -292,7 +292,7 @@ for epoch in range(EPOCHS):
     print("TRAIN LOSS at Epoch %d: WITH TOTAL LOSS %.4f (dc_loss %.4f). F1 on TEST TARGET SET (ORIG) %.2f (EMA) %.2f with train time %d"%(epoch, tot_loss/den, tot_dc_loss/den, 100*f1_val, 100*f1_val_ema, (end-start)))    
     sys.stdout.flush()
 
-dir_name = "./results/HIDA"
+dir_name = "./results/SSHIDA"
 if not os.path.exists(dir_name):
     os.makedirs(dir_name)
 
