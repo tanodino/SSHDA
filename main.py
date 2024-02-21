@@ -135,7 +135,11 @@ test_target_label = target_label[test_target_idx]
 
 test_target_data_unl = target_data[test_target_idx]
 
+if target_prefix == 'RESISC45':
+    TRAIN_BATCH_SIZE = 64
 
+print(TRAIN_BATCH_SIZE)
+exit()
 
 print("TRAININg ID SELECTED")
 print("train_target_data ",train_target_data.shape)
@@ -288,7 +292,7 @@ for epoch in range(EPOCHS):
         tot_fixmatch_loss+=u_pred_loss.cpu().detach().numpy()
         den+=1.
 
-        torch.cuda.empty_cache()
+        #torch.cuda.empty_cache()
 
     end = time.time()
     pred_valid, labels_valid = evaluation(model, dataloader_test_target, device)
