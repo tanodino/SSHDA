@@ -288,7 +288,7 @@ for epoch in range(EPOCHS):
         tot_fixmatch_loss+=u_pred_loss.cpu().detach().numpy()
         den+=1.
 
-        #torch.cuda.empty_cache()
+        torch.cuda.empty_cache()
 
     end = time.time()
     pred_valid, labels_valid = evaluation(model, dataloader_test_target, device)

@@ -309,7 +309,7 @@ for epoch in range(EPOCHS):
         elif abla_number == 9:
             loss = loss_pred + loss_dom + u_loss_dom + u_pred_loss             
         elif abla_number == 10:
-            loss = loss_pred + loss_ortho + loss_dom + u_pred_loss 
+            loss = loss_pred + loss_ortho + loss_dom + u_pred_loss
         else:
             loss = loss_pred + loss_ortho + loss_dom + u_loss_ortho + u_loss_dom + u_pred_loss +  neg_learn_loss 
         
