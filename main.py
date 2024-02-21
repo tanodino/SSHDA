@@ -138,8 +138,8 @@ test_target_data_unl = target_data[test_target_idx]
 if target_prefix == 'RESISC45':
     TRAIN_BATCH_SIZE = 64
 
-print(TRAIN_BATCH_SIZE)
-exit()
+#print(TRAIN_BATCH_SIZE)
+#exit()
 
 print("TRAININg ID SELECTED")
 print("train_target_data ",train_target_data.shape)
