@@ -136,7 +136,7 @@ test_target_label = target_label[test_target_idx]
 test_target_data_unl = target_data[test_target_idx]
 
 if target_prefix == 'RESISC45':
-    TRAIN_BATCH_SIZE = 64
+    TRAIN_BATCH_SIZE = 96
 
 #print(TRAIN_BATCH_SIZE)
 #exit()
