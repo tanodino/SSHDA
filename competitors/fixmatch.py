@@ -8,18 +8,17 @@ import numpy as np
 import sys
 from sklearn.utils import shuffle
 #from model_transformer import TransformerEncoder
-from model_pytorch import ORDisModel, SupervisedContrastiveLoss
 import time
 from sklearn.metrics import f1_score
 from torchvision.models import resnet18
-from sklearn.model_selection import train_test_split
 #from torchvision.models import convnext_tiny
-from functions import MyRotateTransform, MyDataset_Unl, MyDataset
+from functions import MyDataset_Unl, MyDataset
 import torchvision.transforms as T 
 import torch.nn.functional as F
 import torchvision.transforms.functional as TF
+import sys
+sys.path.append('..')
 from functions import cumulate_EMA, transform, TRAIN_BATCH_SIZE, LEARNING_RATE, MOMENTUM_EMA, EPOCHS, TH_FIXMATCH, WARM_UP_EPOCH_EMA
-#import functions
 import os
 
 
@@ -81,30 +80,12 @@ train_data, train_label = shuffle(train_data, train_label)
 x_train_source = torch.tensor(train_data, dtype=torch.float32)
 y_train_source = torch.tensor(train_label, dtype=torch.int64)
 
-#dataset_source = TensorDataset(x_train_source, y_train_source)
-'''
-angle = [0, 90, 180, 270]
-transform_source = T.Compose([
-    T.RandomHorizontalFlip(),
-    T.RandomVerticalFlip(),
-    T.RandomApply([MyRotateTransform(angles=angle)], p=0.5)
-    ])
-'''
 dataset_source = MyDataset(x_train_source, y_train_source, transform=transform)
 dataloader_train = DataLoader(dataset_source, shuffle=True, batch_size=TRAIN_BATCH_SIZE)
 
 
 #DATALOADER TARGET UNLABELLED
 x_train_target_unl = torch.tensor(unl_data, dtype=torch.float32)
-
-'''
-transform_target_unl = T.Compose([
-    T.RandomHorizontalFlip(),
-    T.RandomVerticalFlip(),
-    T.RandomApply([MyRotateTransform(angles=angle)], p=0.5),
-    T.RandomApply([T.ColorJitter()], p=0.5)
-    ])
-'''
 dataset_train_target_unl = MyDataset_Unl(x_train_target_unl, transform)
 dataloader_train_unl = DataLoader(dataset_train_target_unl, shuffle=True, batch_size=TRAIN_BATCH_SIZE)
 
@@ -151,7 +132,6 @@ for epoch in range(EPOCHS):
         pred_u_weak = model(x_batch_unl)
         prede_u_strong = model(x_batch_unl_aug)
 
-        #l2_reg = sum(p.pow(2).sum() for p in model.parameters())
         with torch.no_grad():
             pseudo_labels = torch.softmax(pred_u_weak, dim=1)
             max_probs, targets_u = torch.max(pseudo_labels, dim=1)

@@ -1,5 +1,3 @@
-### To implemente the Transformer Framework I used the code from this website : https://www.kaggle.com/code/arunmohan003/transformer-from-scratch-using-pytorch
-
 import torch
 import torch.nn as nn
 import sys
@@ -7,14 +5,12 @@ from torch.utils.data import TensorDataset, DataLoader
 import numpy as np
 import sys
 from sklearn.utils import shuffle
-#from model_transformer import TransformerEncoder
-from model_pytorch import ORDisModel, SupervisedContrastiveLoss
 import time
 from sklearn.metrics import f1_score
 from torchvision.models import resnet18
-from sklearn.model_selection import train_test_split
-from torchvision.models import convnext_tiny
-from functions import MyRotateTransform, MyDataset_Unl, MyDataset, cumulate_EMA, transform, TRAIN_BATCH_SIZE, LEARNING_RATE, MOMENTUM_EMA, EPOCHS, TH_FIXMATCH, WARM_UP_EPOCH_EMA
+import sys
+sys.path.append('..')
+from functions import MyDataset, cumulate_EMA, transform, TRAIN_BATCH_SIZE, LEARNING_RATE, MOMENTUM_EMA, EPOCHS, WARM_UP_EPOCH_EMA
 import os
 
 
@@ -83,12 +79,10 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
 model = resnet18(weights=None)
-#model = convnext_tiny(weights=None)
 model.conv1 = nn.Conv2d(train_data.shape[1], 64, kernel_size=7, stride=2, padding=3,bias=False)
 model._modules["fc"]  = nn.Linear(in_features=512, out_features=n_classes )
 
 model = model.to(device)
-#exit()
 
 
 learning_rate = 0.0001

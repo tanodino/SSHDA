@@ -3,89 +3,21 @@
 import torch
 import torch.nn as nn
 import sys
-from torch.utils.data import TensorDataset, DataLoader, Dataset
+from torch.utils.data import TensorDataset, DataLoader
 import numpy as np
 from sklearn.utils import shuffle
-#from model_transformer import TransformerEncoder
 from model_pytorch import ORDisModel
 import time
 from sklearn.metrics import f1_score
-from torchvision.models import resnet18
-from sklearn.model_selection import train_test_split
-#from torchvision.models import convnext_tiny
-#from torchvision import transforms
 import torchvision.transforms as T 
 import torchvision.transforms.functional as TF
 import torch.nn.functional as F
-import random
-import torchcontrib
-from collections import OrderedDict
-from functions import MyRotateTransform, MyDataset_Unl, MyDataset, cumulate_EMA, modify_weights, transform, TRAIN_BATCH_SIZE, LEARNING_RATE, MOMENTUM_EMA, EPOCHS, TH_FIXMATCH, WARM_UP_EPOCH_EMA
+import sys
+sys.path.append('..')
+
+from functions import MyDataset_Unl, MyDataset, cumulate_EMA, transform, TRAIN_BATCH_SIZE, LEARNING_RATE, MOMENTUM_EMA, EPOCHS, TH_FIXMATCH, WARM_UP_EPOCH_EMA
 import functions
 import os
-
-
-def get_kTop(pred_s, pred_w):
-    pseudo_labels = F.softmax(pred_w, dim=-1)
-    softmax_pred = F.softmax(pred_s, dim=-1)
-    _, targets = torch.max(pseudo_labels, dim=1)
-    targets = targets.unsqueeze(-1)
-    sorted_idx = torch.argsort(softmax_pred, descending=True, dim=1)
-    mask = sorted_idx.eq(targets).float()
-    mask = mask.sum(dim=0).cpu().detach().numpy()
-    idx = np.arange(mask.shape[0])
-    idx = idx[::-1]
-    for i in idx:
-        if mask[i] != 0:
-            return i + 1
-
-
-def to_onehot(labels, n_categories, device, dtype=torch.float32):
-    batch_size = labels.shape[0]
-    one_hot_labels = torch.ones(size=(batch_size, n_categories), dtype=dtype).to(device)
-    for i, label in enumerate(labels):
-        one_hot_labels[i] = one_hot_labels[i].scatter_(dim=0, index=label, value=0)
-    return one_hot_labels
-
-#use pred_w.detach() to compute this loss
-def nl_loss(pred_s, pred_w, k, device):
-    softmax_pred = F.softmax(pred_s, dim=-1)
-    pseudo_label = F.softmax(pred_w, dim=-1)
-    topk = torch.topk(pseudo_label, k)[1]
-    mask_k_npl = to_onehot(topk, pseudo_label.shape[1], device)
-    mask_k_npl = mask_k_npl.to(device)
-    loss_npl = (-torch.log(1-softmax_pred+1e-10) * mask_k_npl).sum(dim=1).mean()
-    return loss_npl
-
-
-
-@torch.no_grad()
-def update_bn(dataloader_source, dataloader_train_target, model):
-    model.train()
-    for x_batch_target, y_batch_target in dataloader_train_target:
-        x_batch_source, y_batch_source = next(iter(dataloader_source))
-
-        x_batch_source = x_batch_source.to(device)
-        y_batch_source = y_batch_source.to(device)
-        
-        x_batch_target = x_batch_target.to(device)
-        y_batch_target = y_batch_target.to(device)
-
-        model([x_batch_source, x_batch_target])
-
-
-def sim_dist_specifc_loss_spc(spec_emb, ohe_label, ohe_dom, scl, epoch):
-    norm_spec_emb = nn.functional.normalize(spec_emb)
-    hash_label = {}
-    new_combined_label = []
-    for v1, v2 in zip(ohe_label, ohe_dom):
-        key = "%d_%d"%(v1,v2)
-        if key not in hash_label:
-            hash_label[key] = len(hash_label)
-        new_combined_label.append( hash_label[key] )
-    new_combined_label = torch.tensor(np.array(new_combined_label), dtype=torch.int64)
-    #print(len(hash_label))
-    return scl(norm_spec_emb, new_combined_label, epoch=epoch)
 
 
 #evaluation(model, dataloader_test_target, device, source_prefix)

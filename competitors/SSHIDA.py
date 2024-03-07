@@ -12,8 +12,10 @@ from torchvision.models import resnet18
 import torchvision.transforms as T 
 import torch.nn.functional as F
 import torchvision.transforms.functional as TF
+
+import sys
+sys.path.append('..')
 from functions import MyDataset_Unl, MyDataset, cumulate_EMA, transform, TRAIN_BATCH_SIZE, LEARNING_RATE, MOMENTUM_EMA, EPOCHS, TH_FIXMATCH, WARM_UP_EPOCH_EMA
-#import functions
 from model_pytorch import FC_Classifier_NoLazy
 import os
 
