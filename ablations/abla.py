@@ -10,16 +10,85 @@ from sklearn.utils import shuffle
 from model_pytorch import ORDisModel
 import time
 from sklearn.metrics import f1_score
+from torchvision.models import resnet18
+from sklearn.model_selection import train_test_split
+#from torchvision.models import convnext_tiny
+#from torchvision import transforms
 import torchvision.transforms as T 
 import torchvision.transforms.functional as TF
 import torch.nn.functional as F
 import random
 import torchcontrib
 from collections import OrderedDict
-from functions import MyDataset_Unl, MyDataset, cumulate_EMA, transform, TRAIN_BATCH_SIZE, LEARNING_RATE, MOMENTUM_EMA, EPOCHS, TH_FIXMATCH, WARM_UP_EPOCH_EMA
+from functions import MyRotateTransform, MyDataset_Unl, MyDataset, cumulate_EMA, modify_weights, transform, TRAIN_BATCH_SIZE, LEARNING_RATE, MOMENTUM_EMA, EPOCHS, TH_FIXMATCH, WARM_UP_EPOCH_EMA
 import functions
 import os
 
+
+def get_kTop(pred_s, pred_w):
+    pseudo_labels = F.softmax(pred_w, dim=-1)
+    softmax_pred = F.softmax(pred_s, dim=-1)
+    _, targets = torch.max(pseudo_labels, dim=1)
+    targets = targets.unsqueeze(-1)
+    sorted_idx = torch.argsort(softmax_pred, descending=True, dim=1)
+    mask = sorted_idx.eq(targets).float()
+    mask = mask.sum(dim=0).cpu().detach().numpy()
+    idx = np.arange(mask.shape[0])
+    idx = idx[::-1]
+    for i in idx:
+        if mask[i] != 0:
+            return i + 1
+
+
+def to_onehot(labels, n_categories, device, dtype=torch.float32):
+    batch_size = labels.shape[0]
+    one_hot_labels = torch.ones(size=(batch_size, n_categories), dtype=dtype).to(device)
+    for i, label in enumerate(labels):
+        one_hot_labels[i] = one_hot_labels[i].scatter_(dim=0, index=label, value=0)
+    return one_hot_labels
+
+#use pred_w.detach() to compute this loss
+def nl_loss(pred_s, pred_w, k, device):
+    softmax_pred = F.softmax(pred_s, dim=-1)
+    pseudo_label = F.softmax(pred_w, dim=-1)
+    topk = torch.topk(pseudo_label, k)[1]
+    mask_k_npl = to_onehot(topk, pseudo_label.shape[1], device)
+    mask_k_npl = mask_k_npl.to(device)
+    loss_npl = (-torch.log(1-softmax_pred+1e-10) * mask_k_npl).sum(dim=1).mean()
+    return loss_npl
+
+
+
+@torch.no_grad()
+def update_bn(dataloader_source, dataloader_train_target, model):
+    model.train()
+    for x_batch_target, y_batch_target in dataloader_train_target:
+        x_batch_source, y_batch_source = next(iter(dataloader_source))
+
+        x_batch_source = x_batch_source.to(device)
+        y_batch_source = y_batch_source.to(device)
+        
+        x_batch_target = x_batch_target.to(device)
+        y_batch_target = y_batch_target.to(device)
+
+        model([x_batch_source, x_batch_target])
+
+
+def sim_dist_specifc_loss_spc(spec_emb, ohe_label, ohe_dom, scl, epoch):
+    norm_spec_emb = nn.functional.normalize(spec_emb)
+    hash_label = {}
+    new_combined_label = []
+    for v1, v2 in zip(ohe_label, ohe_dom):
+        key = "%d_%d"%(v1,v2)
+        if key not in hash_label:
+            hash_label[key] = len(hash_label)
+        new_combined_label.append( hash_label[key] )
+    new_combined_label = torch.tensor(np.array(new_combined_label), dtype=torch.int64)
+    #print(len(hash_label))
+    return scl(norm_spec_emb, new_combined_label, epoch=epoch)
+
+
+#evaluation(model, dataloader_test_target, device, source_prefix)
 def evaluation(model, dataloader, device):
     model.eval()
     tot_pred = []
@@ -36,7 +105,6 @@ def evaluation(model, dataloader, device):
     tot_labels = np.concatenate(tot_labels)
     return tot_pred, tot_labels
 
-
 ##########################
 # MAIN FUNCTION: TRAINING
 ##########################
@@ -46,13 +114,13 @@ def main():
     target_prefix = sys.argv[3]
     nsamples = sys.argv[4]
     nsplit = sys.argv[5]
+    abla_number = int(sys.argv[6])
 
     source_data = np.load("%s/%s_data_filtered.npy"%(dir_,source_prefix) )
     target_data = np.load("%s/%s_data_filtered.npy"%(dir_,target_prefix) )
     source_label = np.load("%s/%s_label_filtered.npy"%(dir_,source_prefix) )
     target_label = np.load("%s/%s_label_filtered.npy"%(dir_,target_prefix) )
 
-    sys.stdout.flush()
     train_target_idx = np.load("%s/%s_%s_%s_train_idx.npy"%(dir_, target_prefix, nsplit, nsamples))
     test_target_idx = np.setdiff1d(np.arange(target_data.shape[0]), train_target_idx)
 
@@ -69,7 +137,6 @@ def main():
     source_data, source_label = shuffle(source_data, source_label)
     train_target_data, train_target_label = shuffle(train_target_data, train_target_label)
 
-
     #DATALOADER SOURCE
     x_train_source = torch.tensor(source_data, dtype=torch.float32)
     y_train_source = torch.tensor(source_label, dtype=torch.int64)
@@ -81,6 +148,7 @@ def main():
     #DATALOADER TARGET TRAIN
     x_train_target = torch.tensor(train_target_data, dtype=torch.float32)
     y_train_target = torch.tensor(train_target_label, dtype=torch.int64)
+
 
     dataset_train_target = MyDataset(x_train_target, y_train_target, transform=transform)
     dataloader_train_target = DataLoader(dataset_train_target, shuffle=True, batch_size=TRAIN_BATCH_SIZE)
@@ -95,18 +163,19 @@ def main():
     x_test_target = torch.tensor(test_target_data, dtype=torch.float32)
     y_test_target = torch.tensor(test_target_label, dtype=torch.int64)
     dataset_test_target = TensorDataset(x_test_target, y_test_target)
-    dataloader_test_target = DataLoader(dataset_test_target, shuffle=False, batch_size=100)
+    dataloader_test_target = DataLoader(dataset_test_target, shuffle=False, batch_size=512)
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     model = ORDisModel(input_channel_source=source_data.shape[1], input_channel_target=target_data.shape[1], num_classes=n_classes)
     model = model.to(device)
 
-
     loss_fn = nn.CrossEntropyLoss()
     optimizer = torch.optim.AdamW(params=model.parameters(), lr=LEARNING_RATE)
 
+    # Loop through the data
     ema_weights = None
+
     for epoch in range(EPOCHS):
         start = time.time()
         model.train()
@@ -141,7 +210,7 @@ def main():
             
             inv_emb = torch.cat([emb_source_inv, emb_target_inv])
             spec_emb = torch.cat([emb_source_spec, emb_target_spec])
-            
+
             norm_inv_emb = nn.functional.normalize(inv_emb)
             norm_spec_emb = nn.functional.normalize(spec_emb)
             loss_ortho = torch.sum( norm_inv_emb * norm_spec_emb, dim=1)
@@ -167,8 +236,22 @@ def main():
             unl_spec = torch.cat([unl_target_spec,unl_target_aug_spec],dim=0)
             norm_unl_spec = F.normalize(unl_spec)
             u_loss_ortho = torch.mean( torch.sum( norm_unl_inv * norm_unl_spec, dim=1) )
-            
-            loss = loss_pred + loss_dom + loss_ortho + u_pred_loss + u_loss_dom + u_loss_ortho
+
+            loss = None
+            if abla_number == 1:
+                loss = loss_pred
+            elif abla_number == 2:
+                loss = loss_pred + loss_ortho + loss_dom
+            elif abla_number == 3:
+                loss = loss_pred + loss_ortho + loss_dom + u_loss_ortho + u_loss_dom 
+            elif abla_number == 4:
+                loss = loss_pred + loss_ortho + loss_dom  + u_pred_loss 
+            elif abla_number == 5:
+                loss = loss_pred + loss_dom + u_loss_dom + u_pred_loss
+            elif abla_number == 6:
+                loss = loss_pred + loss_ortho + u_loss_ortho + u_pred_loss
+            else:
+                loss = loss_pred + loss_ortho + loss_dom + u_loss_ortho + u_loss_dom + u_pred_loss
             
             loss.backward() # backward pass: backpropagate the prediction loss
             optimizer.step() # gradient descent: adjust the parameters by the gradients collected in the backward pass
@@ -197,7 +280,7 @@ def main():
         print("history K", np.bincount(history_k))
         sys.stdout.flush()
 
-    dir_name = dir_+"/OUR"
+    dir_name = dir_+"/OUR_abla_%d"%abla_number
     if not os.path.exists(dir_name):
         os.mkdir(dir_name)
 
@@ -207,3 +290,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
