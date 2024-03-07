@@ -1,0 +1,1 @@
+# CODE FOR THE ECML/PKDD 2024 submission about our approach on semi-supervised heterogeneous domain adapation.
