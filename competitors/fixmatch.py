@@ -1,5 +1,3 @@
-### To implemente the Transformer Framework I used the code from this website : https://www.kaggle.com/code/arunmohan003/transformer-from-scratch-using-pytorch
-
 import torch
 import torch.nn as nn
 import sys
