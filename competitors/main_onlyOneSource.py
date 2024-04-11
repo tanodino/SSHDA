@@ -39,7 +39,7 @@ def dataAugRotate(data, labels, axis):
     return np.array(new_data), np.array(new_label)
 
 
-dir_ = sys.argv[1]
+dir_ = sys.argv[1] # Path to dataset. Add '../' if necessary
 target_prefix = sys.argv[2]
 nsamples = sys.argv[3]
 nsplit = sys.argv[4]

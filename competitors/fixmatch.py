@@ -10,12 +10,10 @@ import time
 from sklearn.metrics import f1_score
 from torchvision.models import resnet18
 #from torchvision.models import convnext_tiny
-from functions import MyDataset_Unl, MyDataset
-import torchvision.transforms as T 
 import torch.nn.functional as F
-import torchvision.transforms.functional as TF
 import sys
 sys.path.append('..')
+from functions import MyDataset_Unl, MyDataset
 from functions import cumulate_EMA, transform, TRAIN_BATCH_SIZE, LEARNING_RATE, MOMENTUM_EMA, EPOCHS, TH_FIXMATCH, WARM_UP_EPOCH_EMA
 import os
 
@@ -45,7 +43,7 @@ def dataAugRotate(data, labels, axis):
     return np.array(new_data), np.array(new_label)
 
 
-dir_ = sys.argv[1]
+dir_ = sys.argv[1] # Path to dataset. Add '../' if necessary
 target_prefix = sys.argv[2]
 nsamples = sys.argv[3]
 nsplit = sys.argv[4]

@@ -7,14 +7,8 @@ from sklearn.utils import shuffle
 from model_pytorch import ORDisModel
 import time
 from sklearn.metrics import f1_score
-import torchvision.transforms as T 
-import torchvision.transforms.functional as TF
 import torch.nn.functional as F
-import random
-import torchcontrib
-from collections import OrderedDict
 from functions import MyDataset_Unl, MyDataset, cumulate_EMA, transform, TRAIN_BATCH_SIZE, LEARNING_RATE, MOMENTUM_EMA, EPOCHS, TH_FIXMATCH, WARM_UP_EPOCH_EMA
-import functions
 import os
 
 def evaluation(model, dataloader, device):
@@ -107,7 +101,6 @@ def main():
     for epoch in range(EPOCHS):
         start = time.time()
         model.train()
-        history_k = []
         tot_loss = 0.0
         tot_ortho_loss = 0.0
         tot_fixmatch_loss = 0.0
@@ -115,7 +108,6 @@ def main():
         for x_batch_source, y_batch_source in dataloader_source:
             optimizer.zero_grad()
             x_batch_target, y_batch_target = next(iter(dataloader_train_target))
-
             x_batch_target_unl, x_batch_target_unl_aug = next(iter(dataloader_train_target_unl))
 
             x_batch_source = x_batch_source.to(device)
@@ -190,8 +182,7 @@ def main():
             model.load_state_dict(current_state_dict)
         ####################### EMA #####################################
         
-        print("TRAIN LOSS at Epoch %d: WITH TOTAL LOSS %.4f acc on TEST TARGET SET (ORIG) %.2f (EMA) %.2f with train time %d"%(epoch, tot_loss/den, 100*f1_val, 100*f1_val_ema, (end-start)))    
-        print("history K", np.bincount(history_k))
+        print("TRAIN LOSS at Epoch %d: WITH TOTAL LOSS %.4f acc on TEST TARGET SET (ORIG) %.2f (EMA) %.2f with train time %d"%(epoch, tot_loss/den, 100*f1_val, 100*f1_val_ema, (end-start)))
         sys.stdout.flush()
 
     dir_name = dir_+"/OUR"

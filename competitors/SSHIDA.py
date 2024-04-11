@@ -9,9 +9,6 @@ import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
 from torch.autograd import grad
 from torchvision.models import resnet18
-import torchvision.transforms as T 
-import torch.nn.functional as F
-import torchvision.transforms.functional as TF
 
 import sys
 sys.path.append('..')
@@ -108,7 +105,7 @@ class SSHIDA(torch.nn.Module):
 # MAIN FUNCTION: TRAINING
 ##########################
 def main():    
-    dir_ = sys.argv[1]
+    dir_ = sys.argv[1] # Path to dataset. Add '../' if necessary
     source_prefix = sys.argv[2]
     target_prefix = sys.argv[3]
     nsamples = sys.argv[4]
