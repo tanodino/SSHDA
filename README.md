@@ -13,19 +13,19 @@ To cope with the challenging SSHDA setting, here we introduce SHeDD (Semi-superv
 
 ## Code organization
 
-Train and test of the proposed approach are performed in file `main.py`. Scripts corresponding to our competitors can be found at the `competitors` folder.
+Train and test of the proposed approach are performed in file `main.py`. Scripts corresponding to our competitors can be found at the `./competitors/` folder.
 Our proposed model is defined in `model_pytorch.py` and some auxiliary functions are defined in `functions.py`.
 
-**Data**
+### Data
 To generate the data files compliant to our main scripts, the original datasets have to be downloaded and then processed by the pre-processing scripts provided in the `Preproc` folder.
 Run `preproc.py` followed by `preproc2.py`.
 
-For instance, to reproduce the `EuroSAT_OPT_SAR` benchmark, you can download the [EuroSAT MS](https://madm.dfki.de/files/sentinel/EuroSATallBands.zip) and [EuroSAT SAR](https://huggingface.co/datasets/wangyi111/EuroSAT-SAR/resolve/main/EuroSAT-SAR.zip) datasets, unzip them and place them at the same folder as the provided preprocessing before running them. This will generate all files necessary to obtain several train-test splits of the data.
+For instance, to reproduce the **EuroSAT-MS-SAR** benchmark, you can download the [EuroSAT MS](https://madm.dfki.de/files/sentinel/EuroSATallBands.zip) and [EuroSAT SAR](https://huggingface.co/datasets/wangyi111/EuroSAT-SAR/resolve/main/EuroSAT-SAR.zip) datasets, unzip them and place them at the same folder as the provided preprocessing before running them. This will generate all files necessary to obtain several train-test splits of the data.
 
-**Input arguments** 
+### Input arguments 
 Scripts take the following input arguments in order (they are used for data loading configuration and may be modified to meet your own dataset conventions):
 1) Dataset path.
-2) Source data prefix: identifies which data will serve as source domain modality. Dataset filename should start with this string. E.g.: `RESISC45` or `EURO` (for the `RESISC45_EuroSAT` benchmark) and `MS` or `SAR` (for the `EuroSAT_OPT_SAR` benchmark)
+2) Source data prefix: identifies which data will serve as source domain modality. E.g.: *RESISC45* or *EURO* (for the *RESISC45-Euro* benchmark) and *MS* or *SAR* (for the *EuroSAT-MS-SAR* benchmark)
 3) Target data prefix: same as above but for target domain.
 4) Number of labelled samples on the target domain. E.g.: 25, 50, 100, 200.
 5) Split number: choose a different train-test split. E.g.: 0, 1, 2, 3, 4.
