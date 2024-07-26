@@ -1,4 +1,4 @@
-# Semi Supervised Heterogeneous Domain Adaptation via Disentanglement and Pseudo-Labelling
+# SHeDD: Semi-Supervised Heterogeneous Domain Adaptation via Disentanglement
 
 Code associated to the following ECML/PKDD 2024 publication:
 
@@ -17,7 +17,7 @@ Train and test of the proposed approach are performed in file `main.py`. Scripts
 Our proposed model is defined in `model_pytorch.py` and some auxiliary functions are defined in `functions.py`.
 
 ### Data
-To generate the data files compliant to our main scripts, the original datasets have to be downloaded and then processed by the pre-processing scripts provided in the `Preproc` folder.
+To generate the data files compliant to our main scripts, the original datasets have to be downloaded and then processed by the pre-processing scripts provided in the `./preproc/` folder.
 Run `preproc.py` followed by `preproc2.py`.
 
 For instance, to reproduce the **EuroSAT-MS-SAR** benchmark, you can download the [EuroSAT MS](https://madm.dfki.de/files/sentinel/EuroSATallBands.zip) and [EuroSAT SAR](https://huggingface.co/datasets/wangyi111/EuroSAT-SAR/resolve/main/EuroSAT-SAR.zip) datasets, unzip them and place them at the same folder as the provided preprocessing before running them. This will generate all files necessary to obtain several train-test splits of the data.
